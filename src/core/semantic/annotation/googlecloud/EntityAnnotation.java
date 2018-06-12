@@ -28,7 +28,7 @@ public class EntityAnnotation {
 			AnalyzeEntitiesResponse response = language.analyzeEntities(request);
 
 			json.put("date", date);
-			//json.put("tittle", tittle);
+			json.put("tittle", tittle);
 			
 			// Print the response
 			for (Entity entity : response.getEntitiesList()) {

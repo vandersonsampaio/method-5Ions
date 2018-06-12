@@ -21,7 +21,7 @@ import core.entity.ExternalData;
 import util.commom.Dates;
 
 public class Load {
-	private static final String FILENAME = "C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\DW_Alemao_Trans\\";
+	private static final String FILENAME = "C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\DW_Alemao_Trans\\";
 
 	public JSONArray getDocuments() {
 		return this.getDocuments(FILENAME);
@@ -81,7 +81,7 @@ public class Load {
 
 	@SuppressWarnings("unchecked")
 	public JSONArray getEntitiesSentiment() {
-		String FILENAME = "C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\EntidadeSentimentos\\DW_Alemao_Trans";
+		String FILENAME = "C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\EntidadeSentimentos\\DW_Alemao_Trans";
 
 		JSONArray arJSON = new JSONArray();
 		File folder = new File(FILENAME);

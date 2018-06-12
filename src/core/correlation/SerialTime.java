@@ -79,7 +79,7 @@ public class SerialTime {
 		}
 
 		Save save = new Save();
-		save.setPath("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\SerialTime\\DW_Alemao_Trans");
+		save.setPath("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\SerialTime\\DW_Alemao_Trans");
 		save.saveSerialTimeCSV(ret, numbersDocs, lengthTexts);
 
 		return ret;

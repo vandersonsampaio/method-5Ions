@@ -19,14 +19,14 @@ public class TranslateDocument {
 
 		Load load = new Load();
 		Save save = new Save();
-		save.setPath("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\DW_Alemao_Trans");
+		save.setPath("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\DW_Alemao_Trans");
 		save.setExtension("json");
 		
 		// Obtem o texto e o Titulo
 		JSONArray jaDocuments = load
-				.getDocuments("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\DW_Alemao\\");
+				.getDocuments("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\DW_Alemao2\\P9\\");
 
-		for (int i = 2213; i < jaDocuments.size(); i++) {
+		for (int i = 0; i < jaDocuments.size(); i++) {
 			JSONObject joDocument = (JSONObject) jaDocuments.get(i);
 			String tittle = joDocument.get("tittle").toString();
 			String text = joDocument.get("text").toString();

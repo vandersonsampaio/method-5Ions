@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -33,7 +34,7 @@ public class FiveIons {
 	
 	public static void main(String[] args) {
 		
-		boolean summarization = false;
+		//boolean summarization = false;
 		boolean annotationEntity = false;
 		boolean annotationSentiment = false;
 		boolean annotationEntSent = false;
@@ -44,8 +45,8 @@ public class FiveIons {
 		
 		for(int i = 0; i < args.length; i++){
 		
-			if(args[i].equals("sum"))
-				summarization = true;
+			//if(args[i].equals("sum"))
+			//	summarization = true;
 			
 			if(args[i].equals("ent"))
 				annotationEntity = true;
@@ -69,7 +70,9 @@ public class FiveIons {
 				prediction = true;
 		}
 		
-		if(summarization || annotationEntity || annotationSentiment || annotationEntSent) {
+		if(annotationEntity || annotationSentiment || annotationEntSent) {
+			String fileName = "";
+			
 			try {
 				//Carrega todos os documentos para iniciar a análise
 				JSONArray documents = load.getDocuments();
@@ -77,18 +80,19 @@ public class FiveIons {
 				for(int i = 0; i < documents.size(); i++) {
 					JSONObject document = (JSONObject) documents.get(i);
 					
+					fileName = document.get("fileName").toString().split("\\.")[0];
 					String tittle = document.get("tittle").toString();
-					System.out.println(document.get("date").toString());
+					//System.out.println(document.get("date").toString());
 					String date = Dates.formatDateTime(document.get("date").toString());
-					String fileName = document.get("fileName").toString().split("\\.")[0];
-					System.out.println(fileName);
+					
+					//System.out.println(fileName);
 					String text = document.get("text").toString();
 	
 					save.setFileName(fileName);
 					
 					//Sumarizar documento por documento
-					if(summarization)
-						summarizationText(fileName, tittle, date, text);
+					//if(summarization)
+					//	summarizationText(fileName, tittle, date, text);
 					
 					//Anota as entidades
 					if(annotationEntity)
@@ -103,7 +107,7 @@ public class FiveIons {
 						entitySentiment(fileName, tittle, date, text);
 				}
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
+				System.out.println(fileName);
 				e.printStackTrace();
 			}
 		}
@@ -129,10 +133,10 @@ public class FiveIons {
 	public static void summarizationText(String fileName, String tittle, String date, String text) {
 		System.out.println("Start Summarization");
 		
-		if(!util.commom.Files.existsFile("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\DMAlemanhaSumm\\Luhn\\", fileName, "summ")) {
+		if(!util.commom.Files.existsFile("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\DMAlemanhaSumm\\", fileName, "summ")) {
 			save.setExtension("summ");
 			save.setFileName(fileName);
-			save.setPath("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\DMAlemanhaSumm\\Luhn");
+			save.setPath("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\DMAlemanhaSumm");
 			JSONObject summary = sumy.summarizationLuhn(tittle + "\r\n" + text, date);
 			save.save(summary);
 			System.out.println(fileName + ".summ ADICIONADO!");
@@ -193,44 +197,71 @@ public class FiveIons {
 	}
 
 	public static void annotationEntity(String fileName, String tittle, String date, String text) throws Exception {
-		System.out.println("Start Annotation Entities");
+	//	System.out.println("Start Annotation Entities");
 		
-		if(!util.commom.Files.existsFile("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\Entidades\\DW_Alemao_Trans", fileName, "ents")) {
+		if(!util.commom.Files.existsFile("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\Entidades\\DW_Alemao_Trans", fileName, "ents")) {
 			save.setExtension("ents");
-			save.setPath("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\Entidades\\DW_Alemao_Trans");
-			JSONObject sentiment = sentimentAnalysis.analyzeSentimentText(text, tittle, date);		
-			save.save(sentiment);
-			System.out.println(fileName + ".ents ADICIONADO!");
+			save.setPath("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\Entidades\\DW_Alemao_Trans");
+			
+			text = StringEscapeUtils.unescapeHtml4(text);
+			
+			long time_ini = System.currentTimeMillis();
+			JSONObject annotation = entityAnnotation.analyzeEntitiesText(text, tittle, date);
+			long time_end = System.currentTimeMillis();
+			
+			//Salvar o arquivo num CSV
+			System.out.println(fileName + ";" + (time_end - time_ini));
+			
+			save.save(annotation);
+//			System.out.println(fileName + ".ents ADICIONADO!");
 		}
 		
-		System.out.println("End Annotation Entities");
+	//	System.out.println("End Annotation Entities");
 	}
 	
 	public static void sentimentAnalysis(String fileName, String tittle, String date, String text) throws Exception {
-		System.out.println("Start Sentiment Analysis");
+		//System.out.println("Start Sentiment Analysis");
 		
-		if(!util.commom.Files.existsFile("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\Sentimentos\\DW_Alemao_Trans", fileName, "sents")) {
+		if(!util.commom.Files.existsFile("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\Sentimentos\\DW_Alemao_Trans", fileName, "sents")) {
 			save.setExtension("sents");
-			save.setPath("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\Sentimentos\\DW_Alemao_Trans");
-			JSONObject annotation = entityAnnotation.analyzeEntitiesText(text, tittle, date);
-			save.save(annotation);
-			System.out.println(fileName + ".sents ADICIONADO!");
+			save.setPath("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\Sentimentos\\DW_Alemao_Trans");
+			
+			text = StringEscapeUtils.unescapeHtml4(text);
+			
+			long time_ini = System.currentTimeMillis();
+			JSONObject sentiment = sentimentAnalysis.analyzeSentimentText(text, tittle, date);
+			long time_end = System.currentTimeMillis();
+			
+			//Salvar o arquivo num CSV
+			System.out.println(fileName + ";" + (time_end - time_ini));
+			
+			save.save(sentiment);
+			//System.out.println(fileName + ".sents ADICIONADO!");
 		}
 		
-		System.out.println("End Sentiment Analysis");
+		//System.out.println("End Sentiment Analysis");
 	}
 	
 	public static void entitySentiment(String fileName, String tittle, String date, String text) throws Exception {
-		System.out.println("Start Sentiment Entities");
+		//System.out.println("Start Sentiment Entities");
 		
-		if(!util.commom.Files.existsFile("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\EntidadeSentimentos\\DW_Alemao_Trans", fileName, "entsents")) {
+		if(!util.commom.Files.existsFile("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\EntidadeSentimentos\\DW_Alemao_Trans", fileName, "entsents")) {
 			save.setExtension("entsents");
-			save.setPath("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\EntidadeSentimentos\\DW_Alemao_Trans");
+			save.setPath("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\EntidadeSentimentos\\DW_Alemao_Trans");
+			
+			text = StringEscapeUtils.unescapeHtml4(text);
+			
+			long time_ini = System.currentTimeMillis();
 			JSONObject sentEntity = sentimentEntityAnnotation.entitySentimentText(text, tittle, date);
+			long time_end = System.currentTimeMillis();
+			
+			//Salvar o arquivo num CSV
+			System.out.println(fileName + ";" + (time_end - time_ini));
+			
 			save.save(sentEntity);
-			System.out.println(fileName + ".entsents ADICIONADO!");
+			//System.out.println(fileName + ".entsents ADICIONADO!");
 		}
 		
-		System.out.println("End Sentiment Entities");
+		//System.out.println("End Sentiment Entities");
 	}
 }

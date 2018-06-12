@@ -26,7 +26,7 @@ public class Dates {
 		return (new DateTime(date)).toString("dd/MM/yyyy");
 	}
 	
-	public static String formatDateTime(String date) {
+	public static String formatDateTime(String date) throws ParseException {
 		String[] parts = date.split("\\.");
 		
 		if(parts.length > 1)
@@ -34,15 +34,15 @@ public class Dates {
 			date = parts[0] + "/" + (parts[1].length() == 1 ? "0".concat(parts[1]) : parts[1]) + "/" + parts[2];
 		
 		SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy");
-		try {
+		//try {
 			Date d = f.parse(date);
 
 			return f.format(d);
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
+		//} catch (ParseException e) {
+		//	e.printStackTrace();
+		//}
 
-		return "";
+		//return "";
 	}
 	
 	@SuppressWarnings("unused")
