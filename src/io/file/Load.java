@@ -81,7 +81,7 @@ public class Load {
 
 	@SuppressWarnings("unchecked")
 	public JSONArray getEntitiesSentiment() {
-		String FILENAME = "C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\EntidadeSentimentos\\DW_Alemao_Trans";
+		String FILENAME = "C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\EntidadeSentimentos\\DW_Alemao_Trans_Sum\\Luhn";
 
 		JSONArray arJSON = new JSONArray();
 		File folder = new File(FILENAME);
@@ -267,13 +267,13 @@ public class Load {
 				extData = new ExternalData();
 				String[] parts = sCurrentLine.split(";");
 
-				extData.setPublicationDate(Dates.dateTime(parts[1]));
+				extData.setPublicationDate(Dates.dateTime(parts[0]));
 				
 				if(!parts[2].isEmpty())
-					extData.setInitialDate(Dates.dateTime(parts[2]));
+					extData.setInitialDate(Dates.dateTime(parts[1]));
 				
-				extData.setEndDate(Dates.dateTime(parts[3]));
-				extData.setValue(Float.parseFloat(parts[4]));
+				extData.setEndDate(Dates.dateTime(parts[2]));
+				extData.setValue(Float.parseFloat(parts[3]));
 				
 				listExtData.add(extData);
 			}

@@ -7,8 +7,8 @@ import java.io.IOException;
 
 public class RemoveFiles {
 	
-	private static final String FILENAME = "C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\Sentimentos.txt";
-	private static final String PATH = "C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\Sentimentos\\DW_Alemao_Trans\\";
+	private static final String FILENAME = "C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\Sentimentos.txt";
+	private static final String PATH = "C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\Sentimentos\\DW_Alemao_Trans\\";
 	private static final String EXT = ".sents";
 
 	public static void main(String[] args) {

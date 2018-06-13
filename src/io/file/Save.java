@@ -116,10 +116,12 @@ public class Save {
 			
 			Set<Long> keySet = table.get(name).keySet();
 			
-			for (Long date : (Long[]) keySet.stream().sorted().toArray()) {
+			Object[] arrKey = keySet.stream().sorted().toArray();
+			
+			for (Object date : arrKey) {
 				EntitySentiment sentiment = table.get(name).get(date);
 
-				str.append(Dates.formatDateTime(date));
+				str.append(Dates.formatDateTime((Long) date));
 				str.append(";");
 				
 				if(!numbersDocs.containsKey(date)){
@@ -154,7 +156,7 @@ public class Save {
 		FileWriter fw = null;
 
 		try {
-			fw = new FileWriter(path + File.separator + name.replace("?", "").replace("\\", "").replace("/", "") + "." + extension);
+			fw = new FileWriter(path + File.separator + name.replace("?", "").replace("\\", "").replace("/", "").replace("\"", "") + "." + extension);
 			bw = new BufferedWriter(fw);
 			bw.write(text);
 
