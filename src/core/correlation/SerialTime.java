@@ -273,7 +273,7 @@ public class SerialTime {
 
 		Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
 		Load load = new Load();
-		List<EntitySentiment> listAux = null;
+		List<EntitySentiment> listAux = new ArrayList<EntitySentiment>();
 		List<DateTime> listDates = load.getEndDateED(Properties.getProperty("fileExternalData") + File.separator + fileName + ".csv");
 		
 		DateTime dtStart = dtInitial;
@@ -281,7 +281,7 @@ public class SerialTime {
 		int order = 1;
 		
 		while(dtLimit.isBefore(dtEnd) || dtLimit.isEqual(dtEnd)){
-			listAux = new ArrayList<EntitySentiment>();
+			//listAux = new ArrayList<EntitySentiment>();
 			
 			dtLimit = listDates.get(order - 1);
 			

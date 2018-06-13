@@ -269,11 +269,11 @@ public class Load {
 
 				extData.setPublicationDate(Dates.dateTime(parts[0]));
 				
-				if(!parts[2].isEmpty())
+				if(!parts[1].isEmpty())
 					extData.setInitialDate(Dates.dateTime(parts[1]));
 				
 				extData.setEndDate(Dates.dateTime(parts[2]));
-				extData.setValue(Float.parseFloat(parts[3]));
+				extData.setValue(Float.parseFloat(parts[3].replace(",", ".")));
 				
 				listExtData.add(extData);
 			}
