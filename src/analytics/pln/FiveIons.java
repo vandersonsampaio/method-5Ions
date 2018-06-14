@@ -148,7 +148,7 @@ public class FiveIons {
 	public static void prediction() {
 		System.out.println("Start Prediction");
 		
-		prediction.gennerationARFF(1);
+		prediction.gennerationARFF(2);
 		
 		System.out.println("End Prediction");
 	}

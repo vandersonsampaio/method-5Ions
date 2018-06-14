@@ -314,7 +314,7 @@ public class SerialTime {
 				serialTimeResult.put(order++, htAuxValues);
 			}
 			
-			if(order == listDates.size())
+			if(order > listDates.size())
 				break;
 		}
 		

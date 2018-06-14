@@ -61,7 +61,9 @@ public class AdapterWeka {
 	}
 	
 	private String gennerationAttribute(){
-		return "\r\n";
+		return "@attribute ini 	REAL\r\n" + 
+				"@attribute end	REAL\r\n" + 
+				"@attribute class		{Aumenta, Diminui, Mantem}\r\n";
 	}
 	
 	private String gennerationData(Hashtable<Integer, Float> annotationSentiment, Hashtable<Integer, Float> annotationReal){
@@ -71,6 +73,7 @@ public class AdapterWeka {
 		
 		for(int i = 0; i < annotationReal.size() - 1; i++){
 			diffValue = annotationReal.get(i + 1) - annotationReal.get(i);
+			
 			data.append(annotationSentiment.get(i));
 			data.append(",");
 			data.append(annotationSentiment.get(i + 1));
