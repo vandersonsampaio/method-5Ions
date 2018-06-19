@@ -14,7 +14,7 @@ public class CalculateWeight {
 		
 		double corr = pearson.correlation(virtualValues, realValues);
 		
-		System.out.println("F1:" + corr);
+		//System.out.println("F1:" + corr);
 		
 		//ShortTime
 		double[] virtualPartPos = {1.7, 0.1, 0, 0.2, 0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.8};
@@ -52,6 +52,32 @@ public class CalculateWeight {
 		
 		for(int i = 0; i < 3; i++)
 			coeficientes[i] = 1;
+		
+		coeficientes[0] = 1;
+		coeficientes[1] = 3;
+		coeficientes[2] = -3.2;
+		
+		double[] virtualEnvAC = new double[virtualEnvNeg.length];
+		double[] virtualCandAC = new double[virtualEnvNeg.length];
+		double[] virtualPartAC = new double[virtualEnvNeg.length];
+		
+		for(int i = 0; i < virtualEnvPosAC.length; i++){
+			virtualEnvAC[i] = virtualEnvPosAC[i] / (virtualEnvPosAC[i] + virtualEnvNegAC[i]);
+			virtualCandAC[i] = virtualCandPosAC[i] / (virtualCandPosAC[i] + virtualCandNegAC[i]);
+			virtualPartAC[i] = virtualPartPosAC[i] / (virtualPartPosAC[i] + virtualPartNegAC[i]);
+			
+			consol[i] = (coeficientes[0] * virtualPartAC[i] + coeficientes[1] * virtualCandAC[i] + coeficientes[2] * virtualEnvAC[i]);
+		}
+		
+		corr =  pearson.correlation(consol, realValues);
+		System.out.println("Corr: " + Math.abs(corr));
+		
+		
+		
+		double aux = calcule(virtualPartAC, virtualCandAC, virtualEnvAC, realValues, coeficientes);
+		System.out.println("Corr: " + Math.abs(aux));
+		
+		System.exit(0);
 		
 		for(int i = 0; i < virtualPartPosAC.length; i++){
 			consolP[i] = (virtualPartPosAC[i]) / (virtualPartNegAC[i]);
@@ -175,5 +201,76 @@ public class CalculateWeight {
 			System.out.println("Iteração: " + iteracoes++ + " Correlação: " + corr);
 		}
 	}
-
+	
+	private static double calcule(double[] a, double[] b, double[] c, double[] real, double[] weigth){
+		double[] covA = covX(a);
+		double[] covB = covX(b);
+		double[] covC = covX(c);
+		
+		double[] covReal = covY(real);
+		double varReal = var(covReal);
+		
+		double cof = 0;
+		double aux = 0;
+		
+		for(int i = 0; i < covA.length; i++){
+			aux += (weigth[0] * covA[i] + weigth[1] * covB[i] + weigth[2] * covC[i]) * covReal[i];
+		}
+		
+		cof = aux / (varX(covA, covB, covC, weigth) * varReal);
+		
+		System.out.println("Numerador: " + (aux / 0.6));
+		System.out.println("Denominador: " + varX(covA, covB, covC, weigth) * varReal);
+		
+		return cof;
+	}
+	
+	private static double[] covX(double[] values){
+		double[] ret = new double[values.length];
+		double med = med(values);
+		
+		for(int i = 0; i < values.length; i++)
+			ret[i] = values[i] - med;
+		
+		return ret;
+	}
+	
+	private static double[] covY(double[] values){
+		double auxMed = med(values);
+		double[] ret = new double[values.length];
+		
+		for(int i = 0; i < values.length; i++)
+			ret[i] = values[i] - auxMed;
+		
+		return ret ;
+	}
+	
+	private static double varX(double[] covA, double[] covB, double[] covC, double[] weigth){
+		double ret = 0;
+		
+		for(int i = 0; i < covA.length; i++){
+			ret += Math.pow(weigth[0] * covA[i], 2) + 2 * weigth[0] * covA[i] * weigth[1] * covB[i] + 2 * weigth[0] * covA[i] * weigth[2] * covC[i] + Math.pow(weigth[1] * covB[i], 2) 
+				+ 2 * weigth[1] * covB[i] * weigth[2] * covC[i] + Math.pow(weigth[2] * covC[i], 2);
+		}
+		
+		return Math.sqrt(ret);
+	}
+	
+	private static double var(double[] values){
+		double ret = 0;
+		
+		for(int i = 0; i < values.length; i++)
+			ret += values[i] * values[i];
+		
+		return Math.sqrt(ret);
+	}
+	
+	private static double med(double[] values){
+		double ret = 0;
+		
+		for(int i = 0; i < values.length; i++)
+			ret += values[i];
+		
+		return ret / values.length; 
+	}
 }
