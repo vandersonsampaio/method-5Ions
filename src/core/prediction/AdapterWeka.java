@@ -19,7 +19,7 @@ public class AdapterWeka {
 		
 	}
 	
-	public String loadDatas(int formula){
+	public String loadDatas(int formula, int classes){
 		Hashtable<Integer, Float> annotationReal = new Hashtable<>();
 		Hashtable<Integer, Float> annotationSentiment = new Hashtable<>();
 		List<String> listNames = Files.getAllFileNames(Properties.getProperty("pathCorrelation"));
@@ -41,14 +41,19 @@ public class AdapterWeka {
 			for(int i = 0; i < serieInternal.length; i++)
 				annotationSentiment.put(i, (float) serieInternal[i]);
 			
-			data.append(this.gennerationData(annotationSentiment, annotationReal));
+			if(classes == 0)
+				data.append(this.gennerationData3Classes(annotationSentiment, annotationReal));
+			else if(classes == 1)
+				data.append(this.gennerationData2ClassesChange(annotationSentiment, annotationReal));
+			else
+				data.append(this.gennerationData2ClassesUpDown(annotationSentiment, annotationReal));
 		}
 		
 		return data.toString();
 	}
 	
-	public void gennerationARFF(int formula){
-		String document = this.gennerationHead() + "\n\n" + this.gennerationAttribute() + "\n\n" + this.loadDatas(formula);
+	public void gennerationARFF(int formula, int classes){
+		String document = this.gennerationHead() + "\n\n" + this.gennerationAttribute() + "\n\n" + this.loadDatas(formula, classes);
 		
 		Save save = new Save();
 		save.setExtension("arff");
@@ -66,7 +71,7 @@ public class AdapterWeka {
 				"@attribute class		{Aumenta, Diminui, Mantem}\r\n";
 	}
 	
-	private String gennerationData(Hashtable<Integer, Float> annotationSentiment, Hashtable<Integer, Float> annotationReal){
+	private String gennerationData3Classes(Hashtable<Integer, Float> annotationSentiment, Hashtable<Integer, Float> annotationReal){
 		StringBuilder data = new StringBuilder();
 
 		Float diffValue;
@@ -79,6 +84,47 @@ public class AdapterWeka {
 			data.append(annotationSentiment.get(i + 1));
 			data.append(",");
 			data.append(diffValue > 0 ? "Aumenta" : diffValue < 0 ? "Diminui" : "Mantem");
+			data.append("\n");
+		}
+		
+		return data.toString();
+	}
+	
+	private String gennerationData2ClassesChange(Hashtable<Integer, Float> annotationSentiment, Hashtable<Integer, Float> annotationReal){
+		StringBuilder data = new StringBuilder();
+
+		Float diffValue;
+		
+		for(int i = 0; i < annotationReal.size() - 1; i++){
+			diffValue = annotationReal.get(i + 1) - annotationReal.get(i);
+			
+			data.append(annotationSentiment.get(i));
+			data.append(",");
+			data.append(annotationSentiment.get(i + 1));
+			data.append(",");
+			data.append(diffValue != 0 ? "Muda" : "Mantem");
+			data.append("\n");
+		}
+		
+		return data.toString();
+	}
+	
+	private String gennerationData2ClassesUpDown(Hashtable<Integer, Float> annotationSentiment, Hashtable<Integer, Float> annotationReal){
+		StringBuilder data = new StringBuilder();
+
+		Float diffValue;
+		
+		for(int i = 0; i < annotationReal.size() - 1; i++){
+			diffValue = annotationReal.get(i + 1) - annotationReal.get(i);
+			
+			if(diffValue == 0)
+				continue;
+			
+			data.append(annotationSentiment.get(i));
+			data.append(",");
+			data.append(annotationSentiment.get(i + 1));
+			data.append(",");
+			data.append(diffValue > 0 ? "Aumenta" : "Diminui");
 			data.append("\n");
 		}
 		
