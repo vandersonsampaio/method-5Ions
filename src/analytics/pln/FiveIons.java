@@ -32,7 +32,7 @@ public class FiveIons {
 	private static SumyPython sumy = new SumyPython();
 	private static AdapterWeka prediction = new AdapterWeka();
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		
 		//boolean summarization = false;
 		boolean annotationEntity = false;
@@ -125,6 +125,8 @@ public class FiveIons {
 		if(correlation)
 			correlationSeries();
 		
+		//Adicionar contribuição
+		
 		//Gera arquivo ARFF do Weka para correlação
 		if(prediction)
 			prediction();
@@ -145,10 +147,10 @@ public class FiveIons {
 		System.out.println("End Summarization");
 	}
 	
-	public static void prediction() {
+	public static void prediction() throws InterruptedException {
 		System.out.println("Start Prediction");
 		
-		prediction.gennerationARFF(2);
+		prediction.gennerationARFF();
 		
 		System.out.println("End Prediction");
 	}

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.joda.time.DateTime;
@@ -11,6 +12,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import core.entity.EntitySentiment;
+import core.entity.SumarySentiment;
 import io.file.Load;
 import io.file.Save;
 import util.commom.Dates;
@@ -28,15 +30,14 @@ public class SerialTime {
 		this.lengthTexts = new Hashtable<Long, Integer>();
 	}
 
-	public Hashtable<Long, Hashtable<String, EntitySentiment>> generationSerie(
-			DateTime inicialDate, DateTime finalDate) {
+	public Hashtable<Long, Hashtable<String, EntitySentiment>> generationSerie(DateTime inicialDate,
+			DateTime finalDate) {
 
 		Hashtable<Long, Hashtable<String, EntitySentiment>> ret = new Hashtable<>();
 
 		DateTime dtAux = inicialDate;
 		for (; dtAux.isBefore(finalDate) || dtAux.isEqual(finalDate);) {
-			List<EntitySentiment> entities = this.entitiesTime.get(dtAux
-					.getMillis());
+			List<EntitySentiment> entities = this.entitiesTime.get(dtAux.getMillis());
 
 			Hashtable<String, EntitySentiment> htAux = new Hashtable<>();
 			for (int j = 0; entities != null && j < entities.size(); j++) {
@@ -46,18 +47,12 @@ public class SerialTime {
 				if (htAux.containsKey(name)) {
 					EntitySentiment aux = htAux.get(name);
 
-					aux.setNegativaSentimentDM(aux.getNegativaSentimentDM()
-							+ element.getNegativaSentimentDM());
-					aux.setPositiveSentimentDM(aux.getPositiveSentimentDM()
-							+ element.getPositiveSentimentDM());
-					aux.setNegativaSentimentCM(aux.getNegativaSentimentCM()
-							+ element.getNegativaSentimentCM());
-					aux.setPositiveSentimentCM(aux.getPositiveSentimentCM()
-							+ element.getPositiveSentimentCM());
-					aux.setNumberCoMentions(aux.getNumberCoMentions()
-							+ element.getNumberCoMentions());
-					aux.setNumberDirectMentions(aux.getNumberDirectMentions()
-							+ element.getNumberDirectMentions());
+					aux.setNegativaSentimentDM(aux.getNegativaSentimentDM() + element.getNegativaSentimentDM());
+					aux.setPositiveSentimentDM(aux.getPositiveSentimentDM() + element.getPositiveSentimentDM());
+					aux.setNegativaSentimentCM(aux.getNegativaSentimentCM() + element.getNegativaSentimentCM());
+					aux.setPositiveSentimentCM(aux.getPositiveSentimentCM() + element.getPositiveSentimentCM());
+					aux.setNumberCoMentions(aux.getNumberCoMentions() + element.getNumberCoMentions());
+					aux.setNumberDirectMentions(aux.getNumberDirectMentions() + element.getNumberDirectMentions());
 				} else {
 					EntitySentiment aux = new EntitySentiment();
 
@@ -67,8 +62,7 @@ public class SerialTime {
 					aux.setNegativaSentimentCM(element.getNegativaSentimentCM());
 					aux.setPositiveSentimentCM(element.getPositiveSentimentCM());
 					aux.setNumberCoMentions(element.getNumberCoMentions());
-					aux.setNumberDirectMentions(element
-							.getNumberDirectMentions());
+					aux.setNumberDirectMentions(element.getNumberDirectMentions());
 
 					htAux.put(name, aux);
 				}
@@ -79,16 +73,15 @@ public class SerialTime {
 		}
 
 		Save save = new Save();
-		save.setPath("C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\SerialTime\\DW_Alemao_Trans_Sum\\Luhn");
+		save.setPath(
+				"C:\\Users\\Vanderson\\Dropbox\\Mestrado\\Dissertação\\Dados\\SerialTime\\DW_Alemao_Trans_Sum\\Luhn");
 		save.saveSerialTimeCSV(ret, numbersDocs, lengthTexts);
 
 		return ret;
 	}
 
-
-	public Hashtable<Integer, Hashtable<String, Float>> summarizationMetric(DateTime dtInitial,
-			DateTime dtEnd, Hashtable<Long, EntitySentiment> entitySerialTime,
-			String frequence, String fileName) {
+	public Hashtable<Integer, Hashtable<String, Float>> summarizationMetric(DateTime dtInitial, DateTime dtEnd,
+			Hashtable<Long, EntitySentiment> entitySerialTime, String frequence, String fileName) {
 
 		Hashtable<Integer, Hashtable<String, Float>> serialTimeResult;
 		switch (frequence) {
@@ -117,26 +110,24 @@ public class SerialTime {
 		return serialTimeResult;
 	}
 
-	private Hashtable<Integer, Hashtable<String, Float>> splitDay(DateTime dtInitial,
-			DateTime dtEnd, Hashtable<Long, EntitySentiment> entitySerialTime) {
-		
+	private Hashtable<Integer, Hashtable<String, Float>> splitDay(DateTime dtInitial, DateTime dtEnd,
+			Hashtable<Long, EntitySentiment> entitySerialTime) {
+
 		Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
 		List<EntitySentiment> listAux = null;
 
 		int order = 1;
 		DateTime dtAux = dtInitial;
-		while (dtAux.isBefore(dtEnd.getMillis())
-				|| dtAux.isEqual(dtEnd.getMillis())) {
+		while (dtAux.isBefore(dtEnd.getMillis()) || dtAux.isEqual(dtEnd.getMillis())) {
 			listAux = new ArrayList<EntitySentiment>();
 
 			if (entitySerialTime.get(dtAux.getMillis()) != null)
 				listAux.add(entitySerialTime.get(dtAux.getMillis()));
 
 			Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
-			if(htAuxValues == null)
+			if (htAuxValues == null)
 				htAuxValues = new Hashtable<>();
-			
-			
+
 			if (listAux.size() > 0) {
 				htAuxValues.put("s1", s1PositivePerNegativa(listAux));
 				htAuxValues.put("s2", s2PositivePorPostiveNegative(listAux));
@@ -149,7 +140,7 @@ public class SerialTime {
 				htAuxValues.put("s2", (float) 0);
 				htAuxValues.put("s3", (float) 0);
 				htAuxValues.put("s4", (float) 0);
-				
+
 				serialTimeResult.put(order++, htAuxValues);
 			}
 
@@ -159,18 +150,17 @@ public class SerialTime {
 		return serialTimeResult;
 	}
 
-	private Hashtable<Integer, Hashtable<String, Float>> splitWeek(DateTime dtInitial,
-			DateTime dtEnd, Hashtable<Long, EntitySentiment> entitySerialTime) {
-		
+	private Hashtable<Integer, Hashtable<String, Float>> splitWeek(DateTime dtInitial, DateTime dtEnd,
+			Hashtable<Long, EntitySentiment> entitySerialTime) {
+
 		Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
-		
+
 		List<EntitySentiment> listAux = null;
 		DateTime date = dtInitial;
 		int week = dtInitial.getWeekyear();
 		int order = 1;
 
-		while (date.isBefore(dtEnd.getMillis())
-				|| date.isEqual(dtEnd.getMillis())) {
+		while (date.isBefore(dtEnd.getMillis()) || date.isEqual(dtEnd.getMillis())) {
 			listAux = new ArrayList<EntitySentiment>();
 
 			while (true) {
@@ -179,18 +169,16 @@ public class SerialTime {
 
 				date = date.plusDays(1);
 
-				if (week != date.getWeekyear()
-						|| dtEnd.plusDays(1).isEqual(date.getMillis())) {
+				if (week != date.getWeekyear() || dtEnd.plusDays(1).isEqual(date.getMillis())) {
 					week = date.getWeekyear();
 					break;
 				}
 			}
 
 			Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
-			if(htAuxValues == null)
+			if (htAuxValues == null)
 				htAuxValues = new Hashtable<>();
-			
-			
+
 			if (listAux.size() > 0) {
 				htAuxValues.put("s1", s1PositivePerNegativa(listAux));
 				htAuxValues.put("s2", s2PositivePorPostiveNegative(listAux));
@@ -203,7 +191,7 @@ public class SerialTime {
 				htAuxValues.put("s2", (float) 0);
 				htAuxValues.put("s3", (float) 0);
 				htAuxValues.put("s4", (float) 0);
-				
+
 				serialTimeResult.put(order++, htAuxValues);
 			}
 		}
@@ -218,17 +206,16 @@ public class SerialTime {
 		return null;
 	}
 
-	private Hashtable<Integer, Hashtable<String, Float>> splitMonth(DateTime dtInitial,
-			DateTime dtEnd, Hashtable<Long, EntitySentiment> entitySerialTime) {
-		
+	private Hashtable<Integer, Hashtable<String, Float>> splitMonth(DateTime dtInitial, DateTime dtEnd,
+			Hashtable<Long, EntitySentiment> entitySerialTime) {
+
 		Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
 		List<EntitySentiment> listAux = null;
 		DateTime date = dtInitial;
 		int month = dtInitial.getMonthOfYear();
 		int order = 1;
 
-		while (date.isBefore(dtEnd.getMillis())
-				|| date.isEqual(dtEnd.getMillis())) {
+		while (date.isBefore(dtEnd.getMillis()) || date.isEqual(dtEnd.getMillis())) {
 			listAux = new ArrayList<EntitySentiment>();
 
 			while (true) {
@@ -237,18 +224,16 @@ public class SerialTime {
 
 				date = date.plusDays(1);
 
-				if (month != date.getMonthOfYear()
-						|| dtEnd.plusDays(1).isEqual(date.getMillis())) {
+				if (month != date.getMonthOfYear() || dtEnd.plusDays(1).isEqual(date.getMillis())) {
 					month = date.getMonthOfYear();
 					break;
 				}
 			}
 
 			Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
-			if(htAuxValues == null)
+			if (htAuxValues == null)
 				htAuxValues = new Hashtable<>();
-			
-			
+
 			if (listAux.size() > 0) {
 				htAuxValues.put("s1", s1PositivePerNegativa(listAux));
 				htAuxValues.put("s2", s2PositivePorPostiveNegative(listAux));
@@ -261,7 +246,7 @@ public class SerialTime {
 				htAuxValues.put("s2", (float) 0);
 				htAuxValues.put("s3", (float) 0);
 				htAuxValues.put("s4", (float) 0);
-				
+
 				serialTimeResult.put(order++, htAuxValues);
 			}
 		}
@@ -269,35 +254,36 @@ public class SerialTime {
 		return serialTimeResult;
 	}
 
-	private Hashtable<Integer, Hashtable<String, Float>> splitCustom(DateTime dtInitial, DateTime dtEnd, Hashtable<Long, EntitySentiment> entitySerialTime, String fileName) {
+	private Hashtable<Integer, Hashtable<String, Float>> splitCustom(DateTime dtInitial, DateTime dtEnd,
+			Hashtable<Long, EntitySentiment> entitySerialTime, String fileName) {
 
 		Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
 		Load load = new Load();
 		List<EntitySentiment> listAux = new ArrayList<EntitySentiment>();
-		List<DateTime> listDates = load.getEndDateED(Properties.getProperty("fileExternalData") + File.separator + fileName + ".csv");
-		
+		List<DateTime> listDates = load
+				.getEndDateED(Properties.getProperty("fileExternalData") + File.separator + fileName + ".csv");
+
 		DateTime dtStart = dtInitial;
 		DateTime dtLimit = dtEnd.minusDays(1);
 		int order = 1;
-		
-		while(dtLimit.isBefore(dtEnd) || dtLimit.isEqual(dtEnd)){
-			//listAux = new ArrayList<EntitySentiment>();
-			
+
+		while (dtLimit.isBefore(dtEnd) || dtLimit.isEqual(dtEnd)) {
+			// listAux = new ArrayList<EntitySentiment>();
+
 			dtLimit = listDates.get(order - 1);
-			
-			while(dtStart.isBefore(dtLimit) || dtStart.equals(dtLimit)){
-				
+
+			while (dtStart.isBefore(dtLimit) || dtStart.equals(dtLimit)) {
+
 				if (entitySerialTime.get(dtStart.getMillis()) != null)
 					listAux.add(entitySerialTime.get(dtStart.getMillis()));
-				
+
 				dtStart = dtStart.plusDays(1);
 			}
-			
+
 			Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
-			if(htAuxValues == null)
+			if (htAuxValues == null)
 				htAuxValues = new Hashtable<>();
-			
-			
+
 			if (listAux.size() > 0) {
 				htAuxValues.put("s1", s1PositivePerNegativa(listAux));
 				htAuxValues.put("s2", s2PositivePorPostiveNegative(listAux));
@@ -310,18 +296,60 @@ public class SerialTime {
 				htAuxValues.put("s2", (float) 0);
 				htAuxValues.put("s3", (float) 0);
 				htAuxValues.put("s4", (float) 0);
-				
+
 				serialTimeResult.put(order++, htAuxValues);
 			}
-			
-			if(order > listDates.size())
+
+			if (order > listDates.size())
 				break;
 		}
-		
+
 		return serialTimeResult;
 	}
 
-	
+	// Arquivo já vem com sequencial númerico e valores das fórmulas
+	private void sComposite(Set<String> names, Hashtable<String, List<SumarySentiment>> htList) {
+		// 0 = C, 1 = P, 2 = R
+		double[] weight = { 1, 1, 1 }; // new double[3];
+		Hashtable<String, double[][]> matrixValues = new Hashtable<>();
+
+		List<SumarySentiment> lsCandidate, lsParty, lsRelation;
+
+		//Repetição para o número de fórmulas
+		for (int j = 0; j < 1; j++) {
+
+			for (String name : names) {
+				lsCandidate = htList.get(name + "-C");
+				lsParty = htList.get(name + "-P");
+				lsRelation = htList.get(name + "-E");
+
+				double[][] mtValues = new double[lsCandidate.size()][3];
+
+				for (int i = 0; i < lsCandidate.size(); i++) {
+					mtValues[i][0] = lsCandidate.get(i).getValueIndex(j);
+					mtValues[i][1] = lsParty.get(i).getValueIndex(j);
+					mtValues[i][2] = lsRelation.get(i).getValueIndex(j);
+				}
+
+				matrixValues.put(name, mtValues);
+			}
+
+			//Definir pesos
+			
+			//Calcular e salvar
+			for (String name : names) {
+				double[][] mtValues = matrixValues.get(name);
+				double[] arrValue = new double[mtValues.length];
+				
+				for(int i = 0; i < mtValues.length; i++) {
+					arrValue[i] = mtValues[i][0] * weight[0] + mtValues[i][1] * weight[1] + mtValues[i][2] * weight[2];
+				}
+				
+				//Salvar o arrValue
+			}
+		}
+	}
+
 	public float s1PositivePerNegativa(List<EntitySentiment> list) {
 		// Total de positiva dividido por total de negativo, por candidato
 		float totalPositiveDM = 0;
@@ -374,8 +402,7 @@ public class SerialTime {
 			totalNegativeDM += sentiment.getNegativaSentimentDM();
 		}
 
-		return (totalPositiveDM - totalNegativeDM)
-				/ (totalPositiveDM + totalNegativeDM);
+		return (totalPositiveDM - totalNegativeDM) / (totalPositiveDM + totalNegativeDM);
 	}
 
 	public float s5PositiveOneEntityPorTotalPositivesAllEntities(List<EntitySentiment> list, String name) {
@@ -418,49 +445,44 @@ public class SerialTime {
 
 		for (EntitySentiment sentiment : list) {
 			if (sentiment.getEntityName().equals(name))
-				totalNumberMentionsUnit += sentiment.getNumberDirectMentions()
-						+ sentiment.getNumberCoMentions();
+				totalNumberMentionsUnit += sentiment.getNumberDirectMentions() + sentiment.getNumberCoMentions();
 
-			totalNumberMentionsAll += sentiment.getNumberDirectMentions()
-					+ sentiment.getNumberCoMentions();
+			totalNumberMentionsAll += sentiment.getNumberDirectMentions() + sentiment.getNumberCoMentions();
 		}
 
 		return totalNumberMentionsUnit / totalNumberMentionsAll;
 	}
 
 	public double calculateCorrelation(double[] a, double[] b) {
-		// com a série gerada e com uma série informada calcular a correlação dos dados
+		// com a série gerada e com uma série informada calcular a correlação
+		// dos dados
 		return new PearsonsCorrelation().correlation(a, b);
 	}
 
 	public void parse(JSONObject entitiesSentiments) {
 		List<EntitySentiment> lsEntSent = new ArrayList<>();
-		System.out.println("File: "
-				+ entitiesSentiments.get("fileName").toString());
-		Long date = Dates.dateTime(entitiesSentiments.get("date").toString())
-				.getMillis();
+		System.out.println("File: " + entitiesSentiments.get("fileName").toString());
+		Long date = Dates.dateTime(entitiesSentiments.get("date").toString()).getMillis();
 		Integer lengthText = Integer.parseInt(entitiesSentiments.get("lengthText").toString());
 
-		if(numbersDocs.containsKey(date)){
+		if (numbersDocs.containsKey(date)) {
 			numbersDocs.put(date, numbersDocs.get(date) + 1);
 		} else {
 			numbersDocs.put(date, 1);
 		}
-		
-		if(lengthTexts.containsKey(date)){
+
+		if (lengthTexts.containsKey(date)) {
 			lengthTexts.put(date, lengthTexts.get(date) + lengthText);
 		} else {
 			lengthTexts.put(date, lengthText);
 		}
-		
+
 		JSONArray arEntities = (JSONArray) entitiesSentiments.get("entities");
 
 		for (int i = 0; arEntities != null && i < arEntities.size(); i++) {
-			String name = ((JSONObject) arEntities.get(i)).get("name")
-					.toString();
+			String name = ((JSONObject) arEntities.get(i)).get("name").toString();
 
-			JSONArray arMentions = (JSONArray) ((JSONObject) arEntities.get(i))
-					.get("mentions");
+			JSONArray arMentions = (JSONArray) ((JSONObject) arEntities.get(i)).get("mentions");
 
 			int nCoMentions = 0;
 			int nDiMentions = 0;
@@ -470,12 +492,10 @@ public class SerialTime {
 			float negativeSentCM = 0;
 
 			for (int j = 0; j < arMentions.size(); j++) {
-				if (((JSONObject) arMentions.get(j)).get("type").toString()
-						.equals("PROPER")) {
+				if (((JSONObject) arMentions.get(j)).get("type").toString().equals("PROPER")) {
 					nDiMentions++;
 
-					float sentAux = Float.parseFloat(((JSONObject) arMentions
-							.get(j)).get("score").toString());
+					float sentAux = Float.parseFloat(((JSONObject) arMentions.get(j)).get("score").toString());
 					if (sentAux > 0) {
 						positiveSentDM += sentAux;
 					} else {
@@ -484,8 +504,7 @@ public class SerialTime {
 				} else {
 					nCoMentions++;
 
-					float sentAux = Float.parseFloat(((JSONObject) arMentions
-							.get(j)).get("score").toString());
+					float sentAux = Float.parseFloat(((JSONObject) arMentions.get(j)).get("score").toString());
 					if (sentAux > 0) {
 						positiveSentCM += sentAux;
 					} else {

@@ -15,8 +15,7 @@ public class AdapterWeka {
 	private Load load;
 	
 	public AdapterWeka(){
-		this.load = new Load();
-		
+		this.load = new Load();	
 	}
 	
 	public String loadDatas(int formula, int classes){
@@ -52,23 +51,46 @@ public class AdapterWeka {
 		return data.toString();
 	}
 	
-	public void gennerationARFF(int formula, int classes){
-		String document = this.gennerationHead() + "\n\n" + this.gennerationAttribute() + "\n\n" + this.loadDatas(formula, classes);
-		
+	public void gennerationARFF(){
 		Save save = new Save();
 		save.setExtension("arff");
 		save.setPath(Properties.getProperty("pathFolderWeka"));
-		save.save(document, "dataSet_Metric" + formula + "_" + System.currentTimeMillis());
+		
+		String document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Aumenta, Diminui, Mantem") + "\n\n" + this.loadDatas(1, 0);
+		save.save(document, "Emnid_Metric1_3Classes");
+		
+		document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Aumenta, Diminui, Mantem") + "\n\n" + this.loadDatas(2, 0);
+		save.save(document, "Emnid_Metric2_3Classes");
+		
+		document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Muda, Mantem") + "\n\n" + this.loadDatas(1, 1);
+		save.save(document, "Emnid_Metric1_2Classes_MM");
+		
+		document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Muda, Mantem") + "\n\n" + this.loadDatas(2, 1);
+		save.save(document, "Emnid_Metric2_2Classes_MM");
+		
+		document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Aumenta, Diminui") + "\n\n" + this.loadDatas(1, 2);
+		save.save(document, "Emnid_Metric1_2Classes_AD");
+		
+		document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Aumenta, Diminui") + "\n\n" + this.loadDatas(2, 2);
+		save.save(document, "Emnid_Metric2_2Classes_AD");
+		
+		try {
+			new WekaClassifier().calculeAcurracy();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
 	private String gennerationHead(){
 		return "@RELATION " + Properties.getProperty("relationPrediction");
 	}
 	
-	private String gennerationAttribute(){
+	private String gennerationAttribute(String classes){
 		return "@attribute ini 	REAL\r\n" + 
 				"@attribute end	REAL\r\n" + 
-				"@attribute class		{Aumenta, Diminui, Mantem}\r\n";
+				"@attribute class		{" + classes + "}\r\n";
 	}
 	
 	private String gennerationData3Classes(Hashtable<Integer, Float> annotationSentiment, Hashtable<Integer, Float> annotationReal){
