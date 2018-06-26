@@ -18,6 +18,7 @@ import org.json.simple.parser.ParseException;
 
 import core.entity.EntitySentiment;
 import core.entity.ExternalData;
+import core.entity.SumarySentiment;
 import util.commom.Dates;
 
 public class Load {
@@ -197,6 +198,61 @@ public class Load {
 			}
 		}
 		return ret;
+	}
+	
+	public List<SumarySentiment> getSerialTimeCompact(String path, String fileName) {
+		String FILENAME = path + File.separator + fileName;
+
+		BufferedReader br = null;
+		FileReader fr = null;
+
+		List<SumarySentiment> ltSS = new ArrayList<>();
+		SumarySentiment ss;
+
+		try {
+			fr = new FileReader(FILENAME);
+			br = new BufferedReader(fr);
+
+			String sCurrentLine;
+
+			while ((sCurrentLine = br.readLine()) != null) {
+				ss = new SumarySentiment();
+				//System.out.println(sCurrentLine);
+				String[] parts = sCurrentLine.split(";");
+
+				if(parts.length > 1){
+					ss.setNumber(Integer.parseInt(parts[0]));
+
+					double[] values = new double[parts.length - 1];
+					
+					for(int i = 1; i < parts.length; i++){
+						values[i - 1] = Float.parseFloat(parts[i].equals("NaN") ? "0" : parts[i]);
+						
+					}					
+					ss.setValues(values);
+					
+					ltSS.add(ss);
+				}
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+
+		} finally {
+			try {
+				if (br != null)
+					br.close();
+
+				if (fr != null)
+					fr.close();
+
+			} catch (IOException ex) {
+				ex.printStackTrace();
+
+			}
+		}
+		
+		return ltSS;
 	}
 
 	public double[] getSerialTimeCompact(String path, String fileName, Integer index) {

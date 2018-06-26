@@ -3,6 +3,7 @@ package core.prediction;
 import java.io.File;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 
 import core.entity.ExternalData;
 import io.file.Load;
@@ -16,6 +17,57 @@ public class AdapterWeka {
 	
 	public AdapterWeka(){
 		this.load = new Load();	
+	}
+	
+	public String gennerationTempARFF(Set<String> names, Hashtable<String, double[]> htDatas){
+		Save save = new Save();
+		save.setExtension("arff");
+		save.setPath(Properties.getProperty("pathFolderWeka"));
+		
+		String document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Aumenta, Diminui, Mantem") + "\n\n" + this.loadDatas(names, htDatas);
+		
+		String fileName = "Emnid_Metric1_3Classes_" + System.currentTimeMillis();
+		save.save(document, fileName);
+		
+		return fileName;
+	}
+	
+	public double calculeAccuracy(String fileName){
+		try {
+			return new WekaClassifier().calculeAcurracy(fileName);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return 0;
+	}
+	
+	public String loadDatas(Set<String> names, Hashtable<String, double[]> htDatas){
+		Hashtable<Integer, Float> annotationReal = new Hashtable<>();
+		Hashtable<Integer, Float> annotationSentiment = new Hashtable<>();
+		
+		StringBuilder data = new StringBuilder();
+		data.append("@DATA \r\n");
+
+		for(String fileName : names){
+			annotationReal.clear();
+			
+			List<ExternalData> listExtData = load.getExternalData(Properties.getProperty("fileExternalData") + File.separator + fileName + ".csv");
+			double[] serieInternal = htDatas.get(fileName);
+			
+			for(int i = 0; i < listExtData.size(); i++){
+				annotationReal.put(i, listExtData.get(i).getValue());	
+			}
+			
+			for(int i = 0; i < serieInternal.length; i++)
+				annotationSentiment.put(i, (float) serieInternal[i]);
+			
+			data.append(this.gennerationData3Classes(annotationSentiment, annotationReal));
+		
+		}
+		
+		return data.toString();
 	}
 	
 	public String loadDatas(int formula, int classes){

@@ -36,6 +36,15 @@ public class WekaClassifier {
 	}
 
 	
+	public double calculeAcurracy(String fileName) throws Exception{
+		Instances data = this.createInstantes(fileName + ".arff");
+		
+		Classifier classifier = new OneR();
+		classifier.buildClassifier(data);
+		
+		return evaluation(classifier, data);
+	}
+	
 	public void calculeAcurracy() throws Exception{
 		List<String> listNames = Files.getAllFileNames(Properties.getProperty("pathFolderWeka"));
 		Instances data;
@@ -63,12 +72,13 @@ public class WekaClassifier {
 		return data;
 	}
 	
-	private void evaluation(Classifier model, Instances data) throws Exception{
+	private double evaluation(Classifier model, Instances data) throws Exception{
 		Evaluation eval = new Evaluation(data);
 		eval.crossValidateModel(model, data, 10, new Random(1));
 		 
 		System.out.println("Acurácia: " + (1 - eval.errorRate()));
 		
+		return 1 - eval.errorRate();
 		//System.out.println(eval.toSummaryString("\nResults\n======\n", false));
 	}
 }

@@ -1,8 +1,10 @@
 package analytics.pln;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.simple.JSONArray;
@@ -10,6 +12,7 @@ import org.json.simple.JSONObject;
 
 import core.correlation.SerialTime;
 import core.entity.EntitySentiment;
+import core.entity.SumarySentiment;
 import core.prediction.AdapterWeka;
 import core.semantic.annotation.googlecloud.EntityAnnotation;
 import core.semantic.annotation.googlecloud.SentimentEntityAnnotation;
@@ -126,10 +129,54 @@ public class FiveIons {
 			correlationSeries();
 		
 		//Adicionar contribuição
+		compositeMetric();
 		
 		//Gera arquivo ARFF do Weka para correlação
 		if(prediction)
 			prediction();
+	}
+	
+	public static void compositeMetric(){
+		Set<String> names = new HashSet<>();
+		
+		names.add("AfD");
+		names.add("CDU");
+		names.add("FDP");
+		names.add("GRUNE");
+		names.add("LINKE");
+		names.add("SPD");
+		
+		String pathC = "C:\\Users\\vanderson.sampaio\\Documents\\PSS\\Research\\Metric\\Emnid\\C\\";
+		String pathP = "C:\\Users\\vanderson.sampaio\\Documents\\PSS\\Research\\Metric\\Emnid\\P\\";
+		String pathE = "C:\\Users\\vanderson.sampaio\\Documents\\PSS\\Research\\Metric\\Emnid\\E\\";
+		
+		Hashtable<String, List<SumarySentiment>> list = new Hashtable<>();
+		
+		list.put("AfD-C", load.getSerialTimeCompact(pathC, "AfD.csv"));
+		list.put("AfD-P", load.getSerialTimeCompact(pathP, "AfD.csv"));
+		list.put("AfD-E", load.getSerialTimeCompact(pathE, "AfD.csv"));
+		
+		list.put("CDU-C", load.getSerialTimeCompact(pathC, "CDU.csv"));
+		list.put("CDU-P", load.getSerialTimeCompact(pathP, "CDU.csv"));
+		list.put("CDU-E", load.getSerialTimeCompact(pathE, "CDU.csv"));
+		
+		list.put("FDP-C", load.getSerialTimeCompact(pathC, "FDP.csv"));
+		list.put("FDP-P", load.getSerialTimeCompact(pathP, "FDP.csv"));
+		list.put("FDP-E", load.getSerialTimeCompact(pathE, "FDP.csv"));
+		
+		list.put("GRUNE-C", load.getSerialTimeCompact(pathC, "GRUNE.csv"));
+		list.put("GRUNE-P", load.getSerialTimeCompact(pathP, "GRUNE.csv"));
+		list.put("GRUNE-E", load.getSerialTimeCompact(pathE, "GRUNE.csv"));
+		
+		list.put("LINKE-C", load.getSerialTimeCompact(pathC, "LINKE.csv"));
+		list.put("LINKE-P", load.getSerialTimeCompact(pathP, "LINKE.csv"));
+		list.put("LINKE-E", load.getSerialTimeCompact(pathE, "LINKE.csv"));
+		
+		list.put("SPD-C", load.getSerialTimeCompact(pathC, "SPD.csv"));
+		list.put("SPD-P", load.getSerialTimeCompact(pathP, "SPD.csv"));
+		list.put("SPD-E", load.getSerialTimeCompact(pathE, "SPD.csv"));
+		
+		serialTime.sComposite(names, list);
 	}
 	
 	public static void summarizationText(String fileName, String tittle, String date, String text) {

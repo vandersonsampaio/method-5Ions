@@ -308,9 +308,9 @@ public class SerialTime {
 	}
 
 	// Arquivo já vem com sequencial númerico e valores das fórmulas
-	private void sComposite(Set<String> names, Hashtable<String, List<SumarySentiment>> htList) {
+	public void sComposite(Set<String> names, Hashtable<String, List<SumarySentiment>> htList) {
 		// 0 = C, 1 = P, 2 = R
-		double[] weight = { 1, 1, 1 }; // new double[3];
+		double[] weight;
 		Hashtable<String, double[][]> matrixValues = new Hashtable<>();
 
 		List<SumarySentiment> lsCandidate, lsParty, lsRelation;
@@ -335,6 +335,8 @@ public class SerialTime {
 			}
 
 			//Definir pesos
+			CalculateWeight cw = new CalculateWeight(names, matrixValues);
+			weight = cw.calculateWeigth();
 			
 			//Calcular e salvar
 			for (String name : names) {
