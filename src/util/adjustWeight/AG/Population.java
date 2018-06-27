@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Random;
 
 public class Population {
-	public static int length = 100;
+	public static int length = 5000;
 	Map<Integer,Weights> population;
 	Map<Integer,Weights> sons;
 	HashMap<Integer, Double> prob;
@@ -31,11 +31,12 @@ public class Population {
     
     public void probs() {
 		prob = new HashMap<Integer,Double>();
-		int criteriaTotal = 0;
+		double criteriaTotal = 0;
 		double range = 0;
 		
-		for (int i = 0 ; i < length ; i++ )
+		for (int i = 0 ; i < length ; i++ ){
 			criteriaTotal += population.get(i).getCriteria();
+		}
 		
 		for (int i = 0; i < length; i++) {
 			Double aux = ((double)population.get(i).getCriteria()) / criteriaTotal;
@@ -67,12 +68,7 @@ public class Population {
 			}
 		} while (j == i || t2 == null);
 
-		System.out.println(t1);
-		System.out.println(t2);
-		Parents pais = new Parents(t1,t2);
-
-		return pais;
-
+		return new Parents(t1,t2);
 	}
     
     public Weights mutacao(Weights wei) {
@@ -87,10 +83,6 @@ public class Population {
 				int i = rand.nextInt(3);
 				
 				double value = d * Math.pow(10, p);
-				
-				System.out.println(value);
-				System.out.println(i);
-				System.out.println(wei);
 				
 				if (!String.format("%.5f", wei.getWeights()[i].getValue()).equals(String.format("%.5f", value))) {
 					wei.getWeights()[i].setValue(value);
@@ -118,6 +110,8 @@ public class Population {
 				ret[2] = population.get(i).getWeights()[2].getValue();
 			}
 		}
+		
+		System.out.println("Selecionado: {" + ret[0] + "; " + ret[1] + "; " + ret[2] + "} Critério:" + maxCriteria);
 		
 		return ret;
 	}

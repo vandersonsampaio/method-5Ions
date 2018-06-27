@@ -59,7 +59,7 @@ public class Weights {
 	
 	@Override
 	public String toString(){
-		return "{" + weights[0] + "; " + weights[1] + "; " + weights[2] + "} - Critério: " + criteria;
+		return "{" + weights[0].getValue() + "; " + weights[1].getValue() + "; " + weights[2].getValue() + "} - Critério: " + criteria;
 	}
 }
 

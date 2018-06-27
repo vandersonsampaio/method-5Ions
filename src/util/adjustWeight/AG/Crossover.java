@@ -30,6 +30,9 @@ public class Crossover {
 			weight[j] = new Weight(cromossomo);
 		}
 		
+		filho.setWeights(weight);
+
 		return filho;
 	}
 }
+

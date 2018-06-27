@@ -76,7 +76,7 @@ public class WekaClassifier {
 		Evaluation eval = new Evaluation(data);
 		eval.crossValidateModel(model, data, 10, new Random(1));
 		 
-		System.out.println("Acurácia: " + (1 - eval.errorRate()));
+		//System.out.println("Acurácia: " + (1 - eval.errorRate()));
 		
 		return 1 - eval.errorRate();
 		//System.out.println(eval.toSummaryString("\nResults\n======\n", false));

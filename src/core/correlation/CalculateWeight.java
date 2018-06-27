@@ -22,13 +22,13 @@ public class CalculateWeight {
 	public double[] calculateWeigth(){
 		System.out.println("Inicio");
 		Engine engine = new Engine();
-		Population populacao = new Population();
+		Population populacao = new Population(); //Necessário criar valores negativos
 		
 		populacao.iniciaPopulacao();
 		populacao.probs();
 		
 		int geracao = 0;
-		while(engine.notDone(populacao) || geracao <= 100){
+		while(engine.notDone(populacao) && geracao <= 100){
 			System.out.println("Geração: " + (geracao++));
 			populacao.setSons(new HashMap<Integer, Weights>());
 			
