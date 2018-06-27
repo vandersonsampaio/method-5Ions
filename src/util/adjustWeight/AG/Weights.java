@@ -69,7 +69,7 @@ class Weight {
 	private int[] cromossomo;
 	
 	public Weight(double value){
-		this.cromossomo = new int[8];
+		this.cromossomo = new int[9];
 		setValue(value);
 	}
 	
@@ -79,7 +79,7 @@ class Weight {
 		String value = cromossomo[0] + "" +  cromossomo[1] + "" + cromossomo[2] + "." + cromossomo[3] + "" + cromossomo[4] + "" + 
 				cromossomo[5] + "" + cromossomo[6] + "" + cromossomo[7];
 		
-		this.value = Double.parseDouble(value);
+		this.value = Double.parseDouble(value) * cromossomo[8];
 	}
 	
 	public void setValue(double value){
@@ -97,8 +97,8 @@ class Weight {
 	}
 	
 	private void setCromossomo(){
-		Integer partInt = (int) (Math.floor(value * 100) / 100);
-		Double partDecimal = (value - partInt);
+		Integer partInt = (int) (Math.floor(Math.abs(value) * 100) / 100);
+		Double partDecimal = (Math.abs(value) - partInt);
 		
 		String sPartInt = partInt.toString();
 		String sPartDecimal = String.format("%.5f", partDecimal);
@@ -122,6 +122,7 @@ class Weight {
 		cromossomo[5] = Integer.parseInt(sPartDecimal.charAt(4) + "");
 		cromossomo[6] = Integer.parseInt(sPartDecimal.charAt(5) + "");
 		cromossomo[7] = Integer.parseInt(sPartDecimal.charAt(6) + "");
+		cromossomo[8] = value > 0 ? 1 : -1;
 		
 		//System.out.println(cromossomo[0] + "" +  cromossomo[1] + "" + cromossomo[2] + "," + cromossomo[3] + "" + cromossomo[4] + "" + 
 		//		cromossomo[5] + "" + cromossomo[6] + "" + cromossomo[7]);

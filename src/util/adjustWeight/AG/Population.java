@@ -35,11 +35,11 @@ public class Population {
 		double range = 0;
 		
 		for (int i = 0 ; i < length ; i++ ){
-			criteriaTotal += population.get(i).getCriteria();
+			criteriaTotal += (population.get(i).getCriteria() > Engine.criteria ? Engine.criteria : population.get(i).getCriteria());
 		}
 		
 		for (int i = 0; i < length; i++) {
-			Double aux = ((double)population.get(i).getCriteria()) / criteriaTotal;
+			Double aux = (population.get(i).getCriteria() > Engine.criteria ? Engine.criteria : population.get(i).getCriteria()) / criteriaTotal;
 			prob.put(i, aux+range);
 			range += aux;
 		}
@@ -79,10 +79,11 @@ public class Population {
 			do {
 				double d = rand.nextFloat();
 				int p = rand.nextInt(4);
+				int s = rand.nextInt(2); //Defini o sinal do peso (positivo ou negativo)
 				
 				int i = rand.nextInt(3);
 				
-				double value = d * Math.pow(10, p);
+				double value = (d * Math.pow(10, p)) * (s == 0 ? -1 : 1);
 				
 				if (!String.format("%.5f", wei.getWeights()[i].getValue()).equals(String.format("%.5f", value))) {
 					wei.getWeights()[i].setValue(value);

@@ -7,7 +7,7 @@ public class Crossover {
 		Weights filho = new Weights();
 		Weight[] weight = new Weight[pais.pai1.getWeights().length];
 		
-		int[] cromossomo = new int[8];
+		int[] cromossomo = new int[9];
 		Random rand = new Random();
 		int line = rand.nextInt(8);
 		int r = rand.nextInt(2);
@@ -20,7 +20,7 @@ public class Crossover {
 					cromossomo[i] = pais.pai2.getWeights()[j].getCromossomo()[i];
 			}
 			r = rand.nextInt(2);
-			for (int i = line ; i < 8 ; i++) {
+			for (int i = line ; i < 9 ; i++) {
 				if (r == 0)
 					cromossomo[i] = pais.pai1.getWeights()[j].getCromossomo()[i];
 				else

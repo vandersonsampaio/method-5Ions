@@ -28,7 +28,7 @@ public class CalculateWeight {
 		populacao.probs();
 		
 		int geracao = 0;
-		while(engine.notDone(populacao) && geracao <= 100){
+		while(engine.notDone(populacao) && geracao <= 1000){
 			System.out.println("Geração: " + (geracao++));
 			populacao.setSons(new HashMap<Integer, Weights>());
 			

@@ -64,6 +64,8 @@ public class AdapterWeka {
 				annotationSentiment.put(i, (float) serieInternal[i]);
 			
 			data.append(this.gennerationData3Classes(annotationSentiment, annotationReal));
+			//data.append(this.gennerationData2ClassesChange(annotationSentiment, annotationReal));
+			//data.append(this.gennerationData2ClassesUpDown(annotationSentiment, annotationReal));
 		
 		}
 		

@@ -3,7 +3,7 @@ package util.adjustWeight.AG;
 import java.util.Random;
 
 public class Engine {
-	public static double criteria = .6;
+	public static double criteria = .56;
 	
 	public static Weights randomWeight() {
 		Weights ret = new Weights();
@@ -13,7 +13,9 @@ public class Engine {
 		for (int i = 0; i < wei.length; i++) {
 			double d = rand.nextFloat();
 			int p = rand.nextInt(4);
-			wei[i] = new Weight(d * Math.pow(10, p));
+			int s = rand.nextInt(2); //Defini o sinal do peso (positivo ou negativo)
+			
+			wei[i] = new Weight((d * Math.pow(10, p)) * (s == 0 ? -1 : 1));
 		}
 
 		ret.setWeights(wei);

@@ -316,7 +316,7 @@ public class SerialTime {
 		List<SumarySentiment> lsCandidate, lsParty, lsRelation;
 
 		//Repetição para o número de fórmulas
-		for (int j = 0; j < 1; j++) {
+		for (int j = 1; j < 2; j++) {
 
 			for (String name : names) {
 				lsCandidate = htList.get(name + "-C");
