@@ -309,7 +309,7 @@ public class SerialTime {
 
 	// Arquivo já vem com sequencial númerico e valores das fórmulas
 	public void sComposite(Set<String> names, Hashtable<String, List<SumarySentiment>> htList) {
-		// 0 = C, 1 = P, 2 = R
+		// 0 = C, 1 = P, 2 = E
 		double[] weight;
 		Hashtable<String, double[][]> matrixValues = new Hashtable<>();
 

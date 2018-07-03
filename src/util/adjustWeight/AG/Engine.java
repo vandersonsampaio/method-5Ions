@@ -3,7 +3,7 @@ package util.adjustWeight.AG;
 import java.util.Random;
 
 public class Engine {
-	public static double criteria = .56;
+	public static double criteria = 6;
 	
 	public static Weights randomWeight() {
 		Weights ret = new Weights();

@@ -56,7 +56,7 @@ public class WekaClassifier {
 			Classifier classifier = new J48();
 			classifier.buildClassifier(data);
 			
-			evaluation(classifier, data);
+			System.out.println("Acurária: " + evaluation(classifier, data));
 		}
 	}
 	

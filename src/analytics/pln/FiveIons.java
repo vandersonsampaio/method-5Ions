@@ -129,7 +129,8 @@ public class FiveIons {
 			correlationSeries();
 		
 		//Adicionar contribuição
-		compositeMetric();
+		if(true)
+			compositeMetric();
 		
 		//Gera arquivo ARFF do Weka para correlação
 		if(prediction)

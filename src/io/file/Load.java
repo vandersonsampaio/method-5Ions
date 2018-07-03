@@ -252,6 +252,14 @@ public class Load {
 			}
 		}
 		
+		Collections.sort(ltSS, new Comparator<SumarySentiment>() {
+		    public int compare(SumarySentiment o1, SumarySentiment o2) {
+		        Integer i1 = o1.getNumber();
+		        Integer i2 = o2.getNumber();
+		        return (i1 > i2 ? 1 : (i1 == i2 ? 0 : -1));
+		    }
+		});
+		
 		return ltSS;
 	}
 

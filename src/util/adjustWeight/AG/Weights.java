@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Hashtable;
 
 import core.correlation.CalculateWeight;
+import core.correlation.Correlation;
 import core.prediction.AdapterWeka;
 import util.commom.Properties;
 
@@ -37,15 +38,26 @@ public class Weights {
 			values.put(name, value);
 		}
 		
-		AdapterWeka adWeka = new AdapterWeka();
-		String fileName = adWeka.gennerationTempARFF(CalculateWeight.names, values);
+		boolean accuracy = false;
 		
-		this.criteria = adWeka.calculeAccuracy(fileName);
+		if(accuracy){
+			//Acurácia
+			AdapterWeka adWeka = new AdapterWeka();
+			String fileName = adWeka.gennerationTempARFF(CalculateWeight.names, values);
 		
-		File file = new File(Properties.getProperty("pathFolderWeka") + File.separator + fileName + ".arff");
+			this.criteria = adWeka.calculeAccuracy(fileName);
 		
-		if(file.isFile()){
-			file.delete();
+			File file = new File(Properties.getProperty("pathFolderWeka") + File.separator + fileName + ".arff");
+		
+			if(file.isFile()){
+				file.delete();
+			}
+		}else{
+		
+			//Correlação de Pearson
+			Correlation cor = new Correlation();
+			cor.generationCorrelation(CalculateWeight.names, values);
+			this.criteria = cor.numberValid();
 		}
 	}
 	
