@@ -56,8 +56,8 @@ public class Weights {
 		
 			//Correlação de Pearson
 			Correlation cor = new Correlation();
-			cor.generationCorrelation(CalculateWeight.names, values);
-			this.criteria = cor.numberValid();
+			this.criteria = cor.generationCorrelation(CalculateWeight.names, values);
+			//this.criteria = cor.numberValid();
 		}
 	}
 	

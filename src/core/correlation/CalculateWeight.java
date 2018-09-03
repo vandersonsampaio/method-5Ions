@@ -22,7 +22,7 @@ public class CalculateWeight {
 	public double[] calculateWeigth(){
 		System.out.println("Inicio");
 		Engine engine = new Engine();
-		Population populacao = new Population(); //Necessário criar valores negativos
+		Population populacao = new Population();
 		
 		populacao.iniciaPopulacao();
 		populacao.probs();
