@@ -2,7 +2,6 @@ package io.db;
 
 import java.net.UnknownHostException;
 
-import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 
@@ -12,11 +11,13 @@ public class SaveDocuments {
 	
 	public static void main(String[] args){
 		try {
-			SaveDocuments sd = new SaveDocuments("", "db_poll_fakenews", "documents");
+			SaveDocuments sd = new SaveDocuments("localhost", "db_poll_fakenews", "documents");
 			
-			JSON doc = (JSON) JSON.parse("{'title': 'Titulo da materia', 'text':'O corpo da materia sem acentuacao.', 'date': '2018-11-12', 'url': 'www.test.com', 'source': 'Teste', 'type': 'test'}");
+			//DBObject doc = (DBObject) JSON.parse("{'title': 'Titulo da materia', 'text':'O corpo da materia sem acentuacao.', 'date': '2018-11-12', 'url': 'www.test.com', 'source': 'Teste', 'type': 'test'}");
 			
-			sd.insertDocument("documents", doc);
+			//sd.insertDocument("documents", doc);
+			
+			System.out.println(sd.containsDocument("title", "Titulo da materia"));
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -29,14 +30,20 @@ public class SaveDocuments {
 		this.mongo.setCollection(collection);
 	}
 	
-	public void insertDocument(String collection, JSON doc){
+	public void insertDocument(String collection, DBObject doc){
 		this.mongo.setCollection(collection);
 		
 		this.insertDocument(doc);
 	}
 	
-	public void insertDocument(JSON doc){
-		this.mongo.insertDocument((DBObject) doc);
+	public void insertDocument(String collection, JSON doc){
+		this.mongo.setCollection(collection);
+		
+		this.insertDocument((DBObject) doc);
+	}
+	
+	public void insertDocument(DBObject doc){
+		this.mongo.insertDocument(doc);
 	}
 	
 	public boolean containsDocument(String collection, String key, String value){

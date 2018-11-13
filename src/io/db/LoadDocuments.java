@@ -36,8 +36,6 @@ public class LoadDocuments {
 		
 		List<DBObject> result = mongo.findAll();
 		
-		
-		
 		for(DBObject obj : result){
 			ret.add(JSON.parse(obj.toString()));
 		}

@@ -16,6 +16,7 @@ import com.google.cloud.language.v1.Entity;
 import com.google.cloud.language.v1.EntityMention;
 import com.google.cloud.language.v1.LanguageServiceClient;
 import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 
 import io.db.SaveDocuments;
@@ -134,7 +135,7 @@ public class EntityAnnotation implements Runnable {
 			
 			for(int i = 0; i < mentions.size(); i++){
 				if(!sd.containsDocument("entity", mentions.get(i).get("entity").toString()))
-					sd.insertDocument((JSON) JSON.parse(mentions.get(i).toJSONString()));
+					sd.insertDocument((DBObject) JSON.parse(mentions.get(i).toJSONString()));
 				else {
 					//Ajustar isso aqui para atualizar lista de documentos
 					BasicDBObject alter = new BasicDBObject().append("$set", new BasicDBObject().append("entity", mentions.get(i).get("entity").toString()));

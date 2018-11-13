@@ -43,13 +43,6 @@ public class MongoDB {
 	public void insertDocument(DBObject obj){
 		this.collection.insert(obj);
 	}
-	/*DBObject person = new BasicDBObject("_id", "jo")
-	                            .append("name", "Jo Bloggs")
-	                            .append("address", new BasicDBObject("street", "123 Fake St")
-	                                                         .append("city", "Faketon")
-	                                                         .append("state", "MA")
-	                                                         .append("zip", 12345))
-	                            .append("books", books);*/
 	
 	public DBObject getDocument(String id){
 		DBObject query = new BasicDBObject("_id", id);
