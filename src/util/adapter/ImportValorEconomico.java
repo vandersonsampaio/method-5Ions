@@ -28,13 +28,12 @@ public class ImportValorEconomico implements Runnable {
 	public static void main(String[] args) throws InterruptedException {
 		File folder = new File("C:\\Users\\Home\\Dropbox\\Mestrado\\Dissertação\\Dados\\Moeda\\Valor Econômico");
 		List<File> listOfFiles = Arrays.asList(folder.listFiles());
-		System.out.println("Total: " + listOfFiles.size());
-		int length = listOfFiles.size() / 4;// Validar isso.
+
+		int length = listOfFiles.size() / 4;
 
 		for (int i = 0; i < 4; i++) {
 			ImportValorEconomico ive = new ImportValorEconomico(i,
 					listOfFiles.subList(length * i, i + 1 < 4 ? length * (i + 1) : listOfFiles.size()));
-			// System.out.println("Part" + (i+1) + ": " + ive.size());
 			(new Thread(ive)).start();
 		}
 	}
@@ -79,7 +78,7 @@ public class ImportValorEconomico implements Runnable {
 
 				try {
 					sd.insertDocument(json);
-				} catch (MongoException.DuplicateKey e) {
+				} catch (@SuppressWarnings("deprecation") MongoException.DuplicateKey e) {
 					System.out.println("Duplicado Ignorado");
 				}
 

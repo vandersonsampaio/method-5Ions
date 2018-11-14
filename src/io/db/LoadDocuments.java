@@ -14,27 +14,45 @@ public class LoadDocuments {
 	
 	public static void main(String[] args){
 		try {
-			LoadDocuments ld = new LoadDocuments("", "db_poll_fakenews");
+			LoadDocuments ld = new LoadDocuments("localhost", "db_news_brazil", "documents");
 			
-			System.out.println(ld.getAllDocuments("documents").size());
+			System.out.println(ld.getAllDocuments().size());
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	public LoadDocuments(String url, String database) throws UnknownHostException{
+	public LoadDocuments(String url, String database, String collection) throws UnknownHostException{
 		this.mongo = new MongoDB(url);
 		this.mongo.setDataBase(database);
+		this.mongo.setCollection(collection);
+	}
+	
+	public JSONArray getAllDocuments(String collection){
+		this.mongo.setCollection(collection);
+		
+		return this.getAllDocuments();
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONArray getAllDocuments(String collection){
+	public JSONArray getAllDocuments(){
+		JSONArray ret = new JSONArray();
+				
+		List<DBObject> result = mongo.findAll();
+		
+		for(DBObject obj : result){
+			ret.add(JSON.parse(obj.toString()));
+		}
+		
+		return ret;
+	}
+
+	@SuppressWarnings("unchecked")
+	public JSONArray findByQuery(DBObject query) {
 		JSONArray ret = new JSONArray();
 		
-		this.mongo.setCollection(collection);
-		
-		List<DBObject> result = mongo.findAll();
+		List<DBObject> result = mongo.findByQuery(query);
 		
 		for(DBObject obj : result){
 			ret.add(JSON.parse(obj.toString()));

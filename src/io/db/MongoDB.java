@@ -62,6 +62,15 @@ public class MongoDB {
 		
 		return new ArrayList<DBObject>();
 	}
+	
+	public List<DBObject> findByQuery(DBObject query){
+		DBCursor cursor = collection.find(query);
+		
+		if(cursor.length() > 0)
+			return cursor.toArray();
+		
+		return new ArrayList<DBObject>();
+	}
 
 	public boolean containsDocument(String key, String value) {
 		DBCursor cursor = collection.find(new BasicDBObject().append(key, value));
