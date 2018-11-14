@@ -63,6 +63,15 @@ public class MongoDB {
 		return new ArrayList<DBObject>();
 	}
 	
+	public List<DBObject> findByQuery(DBObject query, int limit){
+		DBCursor cursor = collection.find(query).limit(limit);
+		
+		if(cursor.length() > 0)
+			return cursor.toArray();
+		
+		return new ArrayList<DBObject>();
+	}
+	
 	public List<DBObject> findByQuery(DBObject query){
 		DBCursor cursor = collection.find(query);
 		

@@ -60,4 +60,17 @@ public class LoadDocuments {
 		
 		return ret;
 	}
+	
+	@SuppressWarnings("unchecked")
+	public JSONArray findByQuery(DBObject query, int limit) {
+		JSONArray ret = new JSONArray();
+		
+		List<DBObject> result = mongo.findByQuery(query, limit);
+		
+		for(DBObject obj : result){
+			ret.add(JSON.parse(obj.toString()));
+		}
+		
+		return ret;
+	}
 }

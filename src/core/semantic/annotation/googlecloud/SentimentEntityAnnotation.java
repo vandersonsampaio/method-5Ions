@@ -1,5 +1,7 @@
 package core.semantic.annotation.googlecloud;
 
+import java.net.UnknownHostException;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -7,13 +9,41 @@ import com.google.cloud.language.v1.AnalyzeEntitySentimentRequest;
 import com.google.cloud.language.v1.AnalyzeEntitySentimentResponse;
 import com.google.cloud.language.v1.Document;
 import com.google.cloud.language.v1.Document.Type;
+import com.mongodb.BasicDBObject;
+
+import io.db.LoadDocuments;
+
 import com.google.cloud.language.v1.EncodingType;
 import com.google.cloud.language.v1.Entity;
 import com.google.cloud.language.v1.EntityMention;
 import com.google.cloud.language.v1.LanguageServiceClient;
 
-public class SentimentEntityAnnotation {
+public class SentimentEntityAnnotation implements Runnable {
 
+	private final int NUMBERTHREAD = 1;
+	private JSONArray arr;
+	private String host;
+	private String databaseName;
+	private String collectionNameSave;
+	private String collectionNameFind;
+	
+	public SentimentEntityAnnotation(String host, String databaseName, String collectionNameSave, String collectionNameFind) {
+		arr = null;
+		this.host = host;
+		this.databaseName = databaseName;
+		this.collectionNameSave = collectionNameSave;
+		this.collectionNameFind = collectionNameFind;
+	}
+
+	public SentimentEntityAnnotation(String host, String databaseName, String collectionNameSave, String collectionNameFind,
+			JSONArray arr) {
+		this.arr = arr;
+		this.host = host;
+		this.databaseName = databaseName;
+		this.collectionNameSave = collectionNameSave;
+		this.collectionNameFind = collectionNameFind;
+	}
+	
 	@SuppressWarnings("unchecked")
 	public JSONObject entitySentimentText(String text, String tittle, String date) throws Exception {
 		// Salvar sentimento por entidade, preferencialmente por sentença
@@ -117,5 +147,28 @@ public class SentimentEntityAnnotation {
 				}
 			}
 		}
+	}
+
+	public boolean entitySentimentText() throws UnknownHostException{
+		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
+
+		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entitysentiment", "false"),  1);
+
+		int length = jarr.size() / NUMBERTHREAD;
+
+		for (int i = 0; i < NUMBERTHREAD; i++) {
+			SentimentEntityAnnotation sea = new SentimentEntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
+					(JSONArray) jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size()));
+
+			(new Thread(sea)).start();
+		}
+
+		return true;
+	}
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
 	}
 }

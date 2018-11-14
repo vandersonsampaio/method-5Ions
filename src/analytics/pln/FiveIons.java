@@ -7,7 +7,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -31,8 +30,8 @@ public class FiveIons {
 	private static final String DATABASENAME = "db_poll_fakenews";
 	private static Save save = new Save();
 	private static EntityAnnotation entityAnnotation = new EntityAnnotation(HOST, DATABASENAME, "documents", "mentions");
-	private static SentimentAnalysis sentimentAnalysis = new SentimentAnalysis();
-	private static SentimentEntityAnnotation sentimentEntityAnnotation = new SentimentEntityAnnotation();
+	private static SentimentAnalysis sentimentAnalysis = new SentimentAnalysis(HOST, DATABASENAME, "documents");
+	private static SentimentEntityAnnotation sentimentEntityAnnotation = new SentimentEntityAnnotation(HOST, DATABASENAME, "documents", "mentions");
 	private static Load load = new Load();
 	private static SerialTime serialTime = new SerialTime();
 	private static SumyPython sumy = new SumyPython();
@@ -60,20 +59,21 @@ public class FiveIons {
 				prediction = true;
 		}
 
-		// Anota as entidades
 		try {
+			// Anota as entidades
 			entityAnnotation.analyzeEntitiesText();
+		
+			System.exit(1);
+			
+			// Anota os sentimentos
+			sentimentAnalysis.analyzeSentimentText();
+
+			// Anota os sentimentos das entidades
+			sentimentEntityAnnotation.entitySentimentText();
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		// Anota os sentimentos
-		//sentimentAnalysis.analyzeSentimentText(text, tittle, date);
-
-		// Anota os sentimentos das entidades
-		//sentimentEntityAnnotation.entitySentimentText(text, tittle, date);
-
 		// Carrega o sentimento das entidades para gerar as 7-uplas
 		if (genneration7uplas)
 			generation7uplas("25/12/2016", "25/09/2017");
