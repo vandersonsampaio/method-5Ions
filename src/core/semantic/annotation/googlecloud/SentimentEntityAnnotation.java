@@ -12,6 +12,7 @@ import com.google.cloud.language.v1.Document.Type;
 import com.mongodb.BasicDBObject;
 
 import io.db.LoadDocuments;
+import io.db.SaveDocuments;
 
 import com.google.cloud.language.v1.EncodingType;
 import com.google.cloud.language.v1.Entity;
@@ -168,7 +169,22 @@ public class SentimentEntityAnnotation implements Runnable {
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-		
+		//Colocar idioma (language) nos documentos
+		//Se o idioma for diferente de Inglês devo agregar os sentimentos das sentenças que contem a entidade
+		//Se o idioma for inglês devo aplicar o webservice da google
+		try {
+			SaveDocuments sd = new SaveDocuments(host, databaseName, collectionNameSave);
+			LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameSave);
+			
+			for (int i = 0; i < arr.size(); i++) {
+				//Pego as entidades contidas nesse documento (entities)
+				//Pego os sentimentos das sentenças 
+				
+				//o offset da entidade estará entre dois offsets das sentenças
+			}
+			
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
 	}
 }

@@ -66,6 +66,7 @@ public class SentimentAnalysis implements Runnable {
 
 					objAux.put("number", i++);
 
+					objAux.put("offset", sentence.getText().getBeginOffset());
 					if (sentence.getSentiment() == null) {
 						objAux.put("score", 0);
 						objAux.put("magnitude", 0);
@@ -124,7 +125,7 @@ public class SentimentAnalysis implements Runnable {
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		// preciso pegar o offset de cada sentença
 		try {
 			SaveDocuments sd = new SaveDocuments(host, databaseName, collectionName);
 
@@ -140,7 +141,8 @@ public class SentimentAnalysis implements Runnable {
 				for(int j = 0; j < sentences.size(); j++){
 					ltSentences.add(new BasicDBObject().append("number_sentence", ((JSONObject)sentences.get(j)).get("number"))
 							.append("score", ((JSONObject)sentences.get(j)).get("score"))
-							.append("magnitude", ((JSONObject)sentences.get(j)).get("magnitude")));
+							.append("magnitude", ((JSONObject)sentences.get(j)).get("magnitude"))
+							.append("offset", ((JSONObject)sentences.get(j)).get("offset")));
 				}
 				
 				
