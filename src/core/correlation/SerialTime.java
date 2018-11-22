@@ -109,6 +109,199 @@ public class SerialTime {
 
 		return serialTimeResult;
 	}
+	
+	public boolean summarizationMetric() {
+
+		//Carregar todas as entidades que sofreram atualização na serial_time
+		JSONArray jarrEntities = new JSONArray();
+		
+		for(int i = 0; i < jarrEntities.size(); i++){
+			splitDay((JSONObject) jarrEntities.get(i));
+			splitMonth((JSONObject) jarrEntities.get(i));
+			splitWeek((JSONObject) jarrEntities.get(i));
+			splitCustom((JSONObject) jarrEntities.get(i)); //Consulta a collection PERIOD no banco de dados e realiza calculo de metrica para todos
+		}
+		
+		return true;
+	}
+	
+	private void splitDay(JSONObject entity) {
+
+		/*Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
+		List<EntitySentiment> listAux = null;
+
+		int order = 1;
+		DateTime dtAux = dtInitial;
+		while (dtAux.isBefore(dtEnd.getMillis()) || dtAux.isEqual(dtEnd.getMillis())) {
+			listAux = new ArrayList<EntitySentiment>();
+
+			if (entitySerialTime.get(dtAux.getMillis()) != null)
+				listAux.add(entitySerialTime.get(dtAux.getMillis()));
+
+			Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
+			if (htAuxValues == null)
+				htAuxValues = new Hashtable<>();
+
+			if (listAux.size() > 0) {
+				htAuxValues.put("s1", s1PositivePerNegativa(listAux));
+				htAuxValues.put("s2", s2PositivePorPostiveNegative(listAux));
+				htAuxValues.put("s3", s3NegativePorPositiveNegative(listAux));
+				htAuxValues.put("s4", s4PositiveMenusNegativePerPostivieNegative(listAux));
+
+				serialTimeResult.put(order++, htAuxValues);
+			} else {
+				htAuxValues.put("s1", (float) 0);
+				htAuxValues.put("s2", (float) 0);
+				htAuxValues.put("s3", (float) 0);
+				htAuxValues.put("s4", (float) 0);
+
+				serialTimeResult.put(order++, htAuxValues);
+			}
+
+			dtAux = dtAux.plusDays(1);
+		}*/
+	}
+
+	private void splitWeek(JSONObject entity) {
+
+		/*Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
+
+		List<EntitySentiment> listAux = null;
+		DateTime date = dtInitial;
+		int week = dtInitial.getWeekyear();
+		int order = 1;
+
+		while (date.isBefore(dtEnd.getMillis()) || date.isEqual(dtEnd.getMillis())) {
+			listAux = new ArrayList<EntitySentiment>();
+
+			while (true) {
+				if (entitySerialTime.get(date.getMillis()) != null)
+					listAux.add(entitySerialTime.get(date.getMillis()));
+
+				date = date.plusDays(1);
+
+				if (week != date.getWeekyear() || dtEnd.plusDays(1).isEqual(date.getMillis())) {
+					week = date.getWeekyear();
+					break;
+				}
+			}
+
+			Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
+			if (htAuxValues == null)
+				htAuxValues = new Hashtable<>();
+
+			if (listAux.size() > 0) {
+				htAuxValues.put("s1", s1PositivePerNegativa(listAux));
+				htAuxValues.put("s2", s2PositivePorPostiveNegative(listAux));
+				htAuxValues.put("s3", s3NegativePorPositiveNegative(listAux));
+				htAuxValues.put("s4", s4PositiveMenusNegativePerPostivieNegative(listAux));
+
+				serialTimeResult.put(order++, htAuxValues);
+			} else {
+				htAuxValues.put("s1", (float) 0);
+				htAuxValues.put("s2", (float) 0);
+				htAuxValues.put("s3", (float) 0);
+				htAuxValues.put("s4", (float) 0);
+
+				serialTimeResult.put(order++, htAuxValues);
+			}
+		}*/
+	}
+
+	private void splitMonth(JSONObject entity) {
+
+		/*Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
+		List<EntitySentiment> listAux = null;
+		DateTime date = dtInitial;
+		int month = dtInitial.getMonthOfYear();
+		int order = 1;
+
+		while (date.isBefore(dtEnd.getMillis()) || date.isEqual(dtEnd.getMillis())) {
+			listAux = new ArrayList<EntitySentiment>();
+
+			while (true) {
+				if (entitySerialTime.get(date.getMillis()) != null)
+					listAux.add(entitySerialTime.get(date.getMillis()));
+
+				date = date.plusDays(1);
+
+				if (month != date.getMonthOfYear() || dtEnd.plusDays(1).isEqual(date.getMillis())) {
+					month = date.getMonthOfYear();
+					break;
+				}
+			}
+
+			Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
+			if (htAuxValues == null)
+				htAuxValues = new Hashtable<>();
+
+			if (listAux.size() > 0) {
+				htAuxValues.put("s1", s1PositivePerNegativa(listAux));
+				htAuxValues.put("s2", s2PositivePorPostiveNegative(listAux));
+				htAuxValues.put("s3", s3NegativePorPositiveNegative(listAux));
+				htAuxValues.put("s4", s4PositiveMenusNegativePerPostivieNegative(listAux));
+
+				serialTimeResult.put(order++, htAuxValues);
+			} else {
+				htAuxValues.put("s1", (float) 0);
+				htAuxValues.put("s2", (float) 0);
+				htAuxValues.put("s3", (float) 0);
+				htAuxValues.put("s4", (float) 0);
+
+				serialTimeResult.put(order++, htAuxValues);
+			}
+		}*/
+	}
+
+	private void splitCustom(JSONObject entity) {
+
+		/*Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new Hashtable<>();
+		Load load = new Load();
+		List<EntitySentiment> listAux = new ArrayList<EntitySentiment>();
+		List<DateTime> listDates = load
+				.getEndDateED(Properties.getProperty("fileExternalData") + File.separator + fileName + ".csv");
+
+		DateTime dtStart = dtInitial;
+		DateTime dtLimit = dtEnd.minusDays(1);
+		int order = 1;
+
+		while (dtLimit.isBefore(dtEnd) || dtLimit.isEqual(dtEnd)) {
+			// listAux = new ArrayList<EntitySentiment>();
+
+			dtLimit = listDates.get(order - 1);
+
+			while (dtStart.isBefore(dtLimit) || dtStart.equals(dtLimit)) {
+
+				if (entitySerialTime.get(dtStart.getMillis()) != null)
+					listAux.add(entitySerialTime.get(dtStart.getMillis()));
+
+				dtStart = dtStart.plusDays(1);
+			}
+
+			Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
+			if (htAuxValues == null)
+				htAuxValues = new Hashtable<>();
+
+			if (listAux.size() > 0) {
+				htAuxValues.put("s1", s1PositivePerNegativa(listAux));
+				htAuxValues.put("s2", s2PositivePorPostiveNegative(listAux));
+				htAuxValues.put("s3", s3NegativePorPositiveNegative(listAux));
+				htAuxValues.put("s4", s4PositiveMenusNegativePerPostivieNegative(listAux));
+
+				serialTimeResult.put(order++, htAuxValues);
+			} else {
+				htAuxValues.put("s1", (float) 0);
+				htAuxValues.put("s2", (float) 0);
+				htAuxValues.put("s3", (float) 0);
+				htAuxValues.put("s4", (float) 0);
+
+				serialTimeResult.put(order++, htAuxValues);
+			}
+
+			if (order > listDates.size())
+				break;
+		}*/
+	}
 
 	private Hashtable<Integer, Hashtable<String, Float>> splitDay(DateTime dtInitial, DateTime dtEnd,
 			Hashtable<Long, EntitySentiment> entitySerialTime) {
@@ -197,13 +390,6 @@ public class SerialTime {
 		}
 
 		return serialTimeResult;
-	}
-
-	// Ver necessidade
-	@SuppressWarnings("unused")
-	private Hashtable<Integer, Float> splitHalfMonth(List<Long> dates,
-			Hashtable<Long, EntitySentiment> entitySerialTime) {
-		return null;
 	}
 
 	private Hashtable<Integer, Hashtable<String, Float>> splitMonth(DateTime dtInitial, DateTime dtEnd,

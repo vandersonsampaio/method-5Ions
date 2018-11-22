@@ -74,21 +74,27 @@ public class FiveIons {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		//processo deverá ser integrado a análise de sentimentos
 		// Carrega o sentimento das entidades para gerar as 7-uplas
-		if (genneration7uplas)
-			generation7uplas("25/12/2016", "25/09/2017");
+		//if (genneration7uplas)
+		//	generation7uplas("25/12/2016", "25/09/2017");
 
 		// Carrega as 5-uplas para sumarizar as medidas de acordo com a granularidade
 		// desejada (Diário, Semanal, Mensal, Customizada)
 		// Short-Time e Acumulative (Falta o acumulative)
-		if (calculationMetrics)
-			summarizationMetric("25/12/2016", "25/09/2017");
+		// Não será mais passado parâmetros nesse método, o processo será em todo o tempo das publicações para todas as métricas implementadas
+		//if (calculationMetrics)
+		//	summarizationMetric("25/12/2016", "25/09/2017");
+		serialTime.summarizationMetric();
 
 		// Correlação das duas séries temporais
+		// Série externa deverá ser informada aqui
+		//
 		if (correlation)
 			correlationSeries();
 
 		// Adicionar contribuição
+		// rever isso tudo. Ajuste de pesos será interno a saída.
 		if (true)
 			compositeMetric();
 

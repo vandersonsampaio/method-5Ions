@@ -169,7 +169,6 @@ public class SentimentEntityAnnotation implements Runnable {
 	
 	@Override
 	public void run() {
-		//Colocar idioma (language) nos documentos
 		//Se o idioma for diferente de Inglês devo agregar os sentimentos das sentenças que contem a entidade
 		//Se o idioma for inglês devo aplicar o webservice da google
 		try {
@@ -177,12 +176,17 @@ public class SentimentEntityAnnotation implements Runnable {
 			LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameSave);
 			
 			for (int i = 0; i < arr.size(); i++) {
-				//Pego as entidades contidas nesse documento (entities)
-				//Pego os sentimentos das sentenças 
-				
-				//o offset da entidade estará entre dois offsets das sentenças
+				if(((JSONObject) arr.get(i)).get("language").toString().equals("en")){
+					//Pego as entidades contidas nesse documento (entities)
+					
+				} else {
+					//Pego os sentimentos das sentenças 
+					//o offset da entidade estará entre dois offsets das sentenças					
+				}
+
 			}
 			
+			//Salvar tanto na collection MENTIONS quanto na collection DOCUMENTS
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}

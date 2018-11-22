@@ -125,7 +125,6 @@ public class SentimentAnalysis implements Runnable {
 	
 	@Override
 	public void run() {
-		// preciso pegar o offset de cada sentença
 		try {
 			SaveDocuments sd = new SaveDocuments(host, databaseName, collectionName);
 
