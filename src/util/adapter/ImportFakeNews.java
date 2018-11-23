@@ -19,14 +19,16 @@ import io.db.SaveDocuments;
 
 public class ImportFakeNews implements Runnable {
 
-	private final int NUMBERS = 5000;
+	private int countRecords = 0;
+	private int numberThread;
 	List<StringBuilder> lsInsert;
 
 	public ImportFakeNews() {
 		lsInsert = null;
 	}
 
-	public ImportFakeNews(List<StringBuilder> lsInsert) {
+	public ImportFakeNews(int numberThread, List<StringBuilder> lsInsert) {
+		this.numberThread = numberThread;
 		this.lsInsert = lsInsert;
 	}
 
@@ -47,6 +49,8 @@ public class ImportFakeNews implements Runnable {
 			String sCurrentLine = br.readLine();
 			System.out.println(sCurrentLine);
 
+			Thread thr1 = null, thr2 = null, thr3 = null, thr4 = null;
+
 			while ((sCurrentLine = br.readLine()) != null) {
 				if (sCurrentLine.trim().equals(""))
 					continue;
@@ -60,22 +64,33 @@ public class ImportFakeNews implements Runnable {
 
 				str.append(sCurrentLine);
 
-				if (lsFiles.size() == NUMBERS) {
-					new Thread(new ImportFakeNews(lsFiles)).start();
+			}
 
-					lsFiles.clear();
+			int length = lsFiles.size() / 4;
 
-					/*
-					 * try { Thread.sleep(3000); } catch (InterruptedException e) { // TODO
-					 * Auto-generated catch block e.printStackTrace(); }
-					 */
+			for (int i = 0; i < 4; i++) {
+				ImportFakeNews ive = new ImportFakeNews(i,
+						lsFiles.subList(length * i, i + 1 < 4 ? length * (i + 1) : lsFiles.size()));
+
+				if (i == 0) {
+					thr1 = new Thread(ive);
+					thr1.start();
+				} else if (i == 1) {
+					thr2 = new Thread(ive);
+					thr2.start();
+				} else if (i == 2) {
+					thr3 = new Thread(ive);
+					thr3.start();
+				} else if (i == 3) {
+					thr4 = new Thread(ive);
+					thr4.start();
 				}
 			}
 
-			if (lsFiles.size() > 0)
-				new Thread(new ImportFakeNews(lsFiles)).start();
+			while (thr1.isAlive() || thr2.isAlive() || thr3.isAlive() || thr4.isAlive())
+				Thread.sleep(500);
 
-		} catch (IOException e) {
+		} catch (IOException | InterruptedException e) {
 			System.out.println(e.toString());
 
 		} finally {
@@ -106,7 +121,7 @@ public class ImportFakeNews implements Runnable {
 			String id = parts[1];
 			String domain = parts[2];
 			String type = parts[3];
-			String url = parts[4];
+			String url = parts[4].length() > 300 ? parts[4].substring(0, 299) : parts[4];
 			StringBuilder content = new StringBuilder();
 			content.append(parts[5]);
 
@@ -131,6 +146,7 @@ public class ImportFakeNews implements Runnable {
 					content.append(parts[j]);
 				}
 			}
+
 			if (j + 1 < parts.length) {
 				inserted_at = parts[++j];
 				updated_at = parts[++j];
@@ -260,29 +276,13 @@ public class ImportFakeNews implements Runnable {
 					.append("is_entitysentiment", "false").append("is_sentiment", "false").append("entities", null)
 					.append("sentiments", null);
 
-			System.out.println("URL: <" + url + ">");
+			System.out.println("Thread: " + numberThread + " URL: <" + url + "> NumberRecord: " + (++countRecords));
 
 			try {
 				sd.insertDocument(json);
 			} catch (@SuppressWarnings("deprecation") MongoException.DuplicateKey e) {
 				System.out.println("Duplicado Ignorado");
 			}
-
-			// System.out.println(lsInsert.get(i).toString());
-
-			// System.out.println(" = " + number + "\r\n" + "id = " + id + "\r\n" + "domain
-			// = " + domain + "\r\n"
-			// + "type = " + type + "\r\n" + "url = " + url + "\r\n" + "content = " +
-			// content + "\r\n"
-			// + "scraped_at = " + scraped_at + "\r\n" + "inserted_at = " + inserted_at +
-			// "\r\n" + "updated_at = "
-			// + updated_at + "\r\n" + "title = " + title + "\r\n" + "authors = " + authors
-			// + "\r\n"
-			// + "keywords = " + keywords + "\r\n" + "meta_keywords = " + meta_keywords +
-			// "\r\n"
-			// + "meta_description = " + meta_description + "\r\n" + "tags = " + tags +
-			// "\r\n" + "summary = "
-			// + summary + "\r\n\r\n");
 
 		}
 	}
