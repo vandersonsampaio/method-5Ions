@@ -19,7 +19,7 @@ import io.db.SaveDocuments;
 
 public class ImportFakeNews implements Runnable {
 
-	private final int NUMBERS = 100;
+	private final int NUMBERS = 5000;
 	List<StringBuilder> lsInsert;
 
 	public ImportFakeNews() {
@@ -31,7 +31,7 @@ public class ImportFakeNews implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		new ImportFakeNews().splitCSV("C:\\Users\\vanderson.sampaio\\Desktop\\news_sample.csv");
+		new ImportFakeNews().splitCSV("D:\\news_cleaned_2018_02_13.csv");
 	}
 
 	private void splitCSV(String pathFile) {
@@ -52,7 +52,8 @@ public class ImportFakeNews implements Runnable {
 					continue;
 
 				String[] parts = sCurrentLine.split(",");
-				if (StringUtils.isNumeric(parts[0]) && StringUtils.isNumeric(parts[1]) && !parts[0].equals("0")) {
+				if (parts.length > 2 && StringUtils.isNumeric(parts[0]) && StringUtils.isNumeric(parts[1])
+						&& !parts[0].equals("0")) {
 					lsFiles.add(str);
 					str = new StringBuilder();
 				}
@@ -63,6 +64,11 @@ public class ImportFakeNews implements Runnable {
 					new Thread(new ImportFakeNews(lsFiles)).start();
 
 					lsFiles.clear();
+
+					/*
+					 * try { Thread.sleep(3000); } catch (InterruptedException e) { // TODO
+					 * Auto-generated catch block e.printStackTrace(); }
+					 */
 				}
 			}
 
@@ -88,12 +94,12 @@ public class ImportFakeNews implements Runnable {
 	public void run() {
 		SaveDocuments sd = null;
 		try {
-			sd = new SaveDocuments("localhost", "db_fake_news", "documents");
+			sd = new SaveDocuments("localhost", "db_poll_fakenews", "documents");
 		} catch (UnknownHostException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		}	
-		
+		}
+
 		for (int i = 0; i < lsInsert.size(); i++) {
 			String[] parts = lsInsert.get(i).toString().split(",");
 			String number = parts[0];
@@ -105,12 +111,12 @@ public class ImportFakeNews implements Runnable {
 			content.append(parts[5]);
 
 			String scraped_at = "";
-			String inserted_at;
-			String updated_at;
-			String title;
-			String authors;
-			String keywords;
-			String meta_keywords;
+			String inserted_at = "";
+			String updated_at = "";
+			String title = "";
+			String authors = "";
+			String keywords = "";
+			String meta_keywords = "";
 			String meta_description = "";
 			String tags = "";
 			String summary = "";
@@ -125,77 +131,16 @@ public class ImportFakeNews implements Runnable {
 					content.append(parts[j]);
 				}
 			}
-			inserted_at = parts[++j];
-			updated_at = parts[++j];
-			title = parts[++j];
-
-			if (title.startsWith("\"")) {
-				int k = ++j;
-
-				for (; k < parts.length; k++) {
-					title += ", " + parts[k];
-
-					if (parts[k].endsWith("\""))
-						break;
-				}
-
-				j = k;
-			}
-
-			authors = parts[++j];
-
-			if (authors.startsWith("\"")) {
-				int k = ++j;
-
-				for (; k < parts.length; k++) {
-					authors += ", " + parts[k];
-
-					if (parts[k].endsWith("\""))
-						break;
-				}
-
-				j = k;
-			}
-
-			keywords = parts[++j];
-
-			if (keywords.startsWith("\"")) {
-				int k = ++j;
-
-				for (; k < parts.length; k++) {
-					keywords += ", " + parts[k];
-
-					if (parts[k].endsWith("\""))
-						break;
-				}
-
-				j = k;
-			}
-
-			meta_keywords = parts[++j];
-
-			if (meta_keywords.startsWith("\"")) {
-				int k = ++j;
-
-				for (; k < parts.length; k++) {
-					meta_keywords += ", " + parts[k];
-
-					if (parts[k].endsWith("\""))
-						break;
-				}
-
-				j = k;
-			}
-
 			if (j + 1 < parts.length) {
+				inserted_at = parts[++j];
+				updated_at = parts[++j];
+				title = parts[++j];
 
-				meta_description = parts[++j];
-
-				if (meta_description.startsWith("\"")) {
+				if (title.startsWith("\"")) {
 					int k = ++j;
 
 					for (; k < parts.length; k++) {
-						meta_description += ", " + parts[k];
+						title += ", " + parts[k];
 
 						if (parts[k].endsWith("\""))
 							break;
@@ -205,13 +150,13 @@ public class ImportFakeNews implements Runnable {
 				}
 
 				if (j + 1 < parts.length) {
-					tags = parts[++j];
+					authors = parts[++j];
 
-					if (tags.startsWith("\"")) {
+					if (authors.startsWith("\"")) {
 						int k = ++j;
 
 						for (; k < parts.length; k++) {
-							tags += ", " + parts[k];
+							authors += ", " + parts[k];
 
 							if (parts[k].endsWith("\""))
 								break;
@@ -221,13 +166,13 @@ public class ImportFakeNews implements Runnable {
 					}
 
 					if (j + 1 < parts.length) {
-						summary = parts[++j];
+						keywords = parts[++j];
 
-						if (summary.startsWith("\"")) {
+						if (keywords.startsWith("\"")) {
 							int k = ++j;
 
 							for (; k < parts.length; k++) {
-								summary += ", " + parts[k];
+								keywords += ", " + parts[k];
 
 								if (parts[k].endsWith("\""))
 									break;
@@ -235,16 +180,85 @@ public class ImportFakeNews implements Runnable {
 
 							j = k;
 						}
+
+						if (j + 1 < parts.length) {
+							meta_keywords = parts[++j];
+
+							if (meta_keywords.startsWith("\"")) {
+								int k = ++j;
+
+								for (; k < parts.length; k++) {
+									meta_keywords += ", " + parts[k];
+
+									if (parts[k].endsWith("\""))
+										break;
+								}
+
+								j = k;
+							}
+
+							if (j + 1 < parts.length) {
+
+								meta_description = parts[++j];
+
+								if (meta_description.startsWith("\"")) {
+									int k = ++j;
+
+									for (; k < parts.length; k++) {
+										meta_description += ", " + parts[k];
+
+										if (parts[k].endsWith("\""))
+											break;
+									}
+
+									j = k;
+								}
+
+								if (j + 1 < parts.length) {
+									tags = parts[++j];
+
+									if (tags.startsWith("\"")) {
+										int k = ++j;
+
+										for (; k < parts.length; k++) {
+											tags += ", " + parts[k];
+
+											if (parts[k].endsWith("\""))
+												break;
+										}
+
+										j = k;
+									}
+
+									if (j + 1 < parts.length) {
+										summary = parts[++j];
+
+										if (summary.startsWith("\"")) {
+											int k = ++j;
+
+											for (; k < parts.length; k++) {
+												summary += ", " + parts[k];
+
+												if (parts[k].endsWith("\""))
+													break;
+											}
+
+											j = k;
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			}
 
-			//Inserir no banco de dados
-			DBObject json = new BasicDBObject().append("title", title).append("text", content)
-					.append("date", scraped_at).append("url", url)
-					.append("source", domain).append("type", type).append("language", "en").append("is_entityannotation", "false")
-					.append("is_entitysentiment", "false").append("is_sentiment", "false")
-					.append("entities", null).append("sentiments", null);
+			// Inserir no banco de dados
+			DBObject json = new BasicDBObject().append("title", title).append("text", content.toString())
+					.append("date", scraped_at).append("url", url).append("source", domain).append("type", type)
+					.append("language", "en").append("is_entityannotation", "false")
+					.append("is_entitysentiment", "false").append("is_sentiment", "false").append("entities", null)
+					.append("sentiments", null);
 
 			System.out.println("URL: <" + url + ">");
 
@@ -253,16 +267,22 @@ public class ImportFakeNews implements Runnable {
 			} catch (@SuppressWarnings("deprecation") MongoException.DuplicateKey e) {
 				System.out.println("Duplicado Ignorado");
 			}
-			
-			//System.out.println(lsInsert.get(i).toString());
 
-			//System.out.println(" = " + number + "\r\n" + "id = " + id + "\r\n" + "domain = " + domain + "\r\n"
-			//		+ "type = " + type + "\r\n" + "url = " + url + "\r\n" + "content = " + content + "\r\n"
-			//		+ "scraped_at = " + scraped_at + "\r\n" + "inserted_at = " + inserted_at + "\r\n" + "updated_at = "
-			//		+ updated_at + "\r\n" + "title = " + title + "\r\n" + "authors = " + authors + "\r\n"
-			//		+ "keywords = " + keywords + "\r\n" + "meta_keywords = " + meta_keywords + "\r\n"
-			//		+ "meta_description = " + meta_description + "\r\n" + "tags = " + tags + "\r\n" + "summary = "
-			//		+ summary + "\r\n\r\n");
+			// System.out.println(lsInsert.get(i).toString());
+
+			// System.out.println(" = " + number + "\r\n" + "id = " + id + "\r\n" + "domain
+			// = " + domain + "\r\n"
+			// + "type = " + type + "\r\n" + "url = " + url + "\r\n" + "content = " +
+			// content + "\r\n"
+			// + "scraped_at = " + scraped_at + "\r\n" + "inserted_at = " + inserted_at +
+			// "\r\n" + "updated_at = "
+			// + updated_at + "\r\n" + "title = " + title + "\r\n" + "authors = " + authors
+			// + "\r\n"
+			// + "keywords = " + keywords + "\r\n" + "meta_keywords = " + meta_keywords +
+			// "\r\n"
+			// + "meta_description = " + meta_description + "\r\n" + "tags = " + tags +
+			// "\r\n" + "summary = "
+			// + summary + "\r\n\r\n");
 
 		}
 	}

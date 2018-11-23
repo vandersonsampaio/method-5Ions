@@ -24,7 +24,7 @@ public class AdapterWeka {
 		save.setExtension("arff");
 		save.setPath(Properties.getProperty("pathFolderWeka"));
 		
-		String document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Aumenta, Diminui, Mantem") + "\n\n" + this.loadDatas(names, htDatas);
+		String document = this.gennerationHead() + "\n\n" + this.gennerationAttribute("Muda, Mantem") + "\n\n" + this.loadDatas(names, htDatas);
 		
 		String fileName = "Emnid_Metric1_3Classes_" + System.currentTimeMillis();
 		save.save(document, fileName);
@@ -63,8 +63,8 @@ public class AdapterWeka {
 			for(int i = 0; i < serieInternal.length; i++)
 				annotationSentiment.put(i, (float) serieInternal[i]);
 			
-			data.append(this.gennerationData3Classes(annotationSentiment, annotationReal));
-			//data.append(this.gennerationData2ClassesChange(annotationSentiment, annotationReal));
+			//data.append(this.gennerationData3Classes(annotationSentiment, annotationReal));
+			data.append(this.gennerationData2ClassesChange(annotationSentiment, annotationReal));
 			//data.append(this.gennerationData2ClassesUpDown(annotationSentiment, annotationReal));
 		
 		}

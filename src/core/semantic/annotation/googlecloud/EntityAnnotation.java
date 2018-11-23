@@ -134,6 +134,9 @@ public class EntityAnnotation implements Runnable {
 
 		int length = jarr.size() / NUMBERTHREAD;
 
+		if(length == 0)
+			return true;
+		
 		for (int i = 0; i < NUMBERTHREAD; i++) {
 			EntityAnnotation ea = new EntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
 					(JSONArray) jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size()));
