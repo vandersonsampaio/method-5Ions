@@ -88,9 +88,6 @@ public class SentimentAnalysis implements Runnable {
 	 * Gets {@link Sentiment} from the contents of the GCS hosted file.
 	 */
 	public static Sentiment analyzeSentimentFile(String gcsUri) throws Exception {
-		// [START analyze_sentiment_file]
-		// Instantiate the Language client
-		// com.google.cloud.language.v1.LanguageServiceClient
 		try (LanguageServiceClient language = LanguageServiceClient.create()) {
 			Document doc = Document.newBuilder().setGcsContentUri(gcsUri).setType(Type.PLAIN_TEXT).build();
 			AnalyzeSentimentResponse response = language.analyzeSentiment(doc);
@@ -113,6 +110,9 @@ public class SentimentAnalysis implements Runnable {
 
 		int length = jarr.size() / NUMBERTHREAD;
 
+		if(length == 0)
+			return true;
+		
 		for (int i = 0; i < NUMBERTHREAD; i++) {
 			SentimentAnalysis sa = new SentimentAnalysis(host, databaseName, collectionName,
 					(JSONArray) jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size()));

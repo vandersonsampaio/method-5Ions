@@ -39,18 +39,10 @@ public class FiveIons {
 
 	public static void main(String[] args) throws InterruptedException {
 
-		boolean genneration7uplas = false;
-		boolean calculationMetrics = false;
 		boolean correlation = false;
 		boolean prediction = false;
 
 		for (int i = 0; i < args.length; i++) {
-
-			if (args[i].equals("gen"))
-				genneration7uplas = true;
-
-			if (args[i].equals("calc"))
-				calculationMetrics = true;
 
 			if (args[i].equals("corr"))
 				correlation = true;

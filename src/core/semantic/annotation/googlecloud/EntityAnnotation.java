@@ -177,6 +177,7 @@ public class EntityAnnotation implements Runnable {
 					
 					JSONArray find = ld.findByQuery(query);
 					
+					//New Entity
 					if (find.size() == 0) {
 						
 						BasicDBObject newEntity = new BasicDBObject();
@@ -212,7 +213,7 @@ public class EntityAnnotation implements Runnable {
 						
 						sd.insertDocument(collectionNameSave, newEntity);
 					
-					} else {
+					} else {//Update Old Entity
 						JSONObject oldEntity = (JSONObject) find.get(i);
 
 						//POSSÍVEL ERRO

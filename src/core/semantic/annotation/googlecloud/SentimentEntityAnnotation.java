@@ -157,6 +157,9 @@ public class SentimentEntityAnnotation implements Runnable {
 
 		int length = jarr.size() / NUMBERTHREAD;
 
+		if(length == 0)
+			return true;
+		
 		for (int i = 0; i < NUMBERTHREAD; i++) {
 			SentimentEntityAnnotation sea = new SentimentEntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
 					(JSONArray) jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size()));
@@ -176,18 +179,27 @@ public class SentimentEntityAnnotation implements Runnable {
 			LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameSave);
 			
 			for (int i = 0; i < arr.size(); i++) {
-				if(((JSONObject) arr.get(i)).get("language").toString().equals("en")){
+				JSONObject doc = (JSONObject) arr.get(i);
+				if(doc.get("language").toString().equals("en")){
 					//Pego as entidades contidas nesse documento (entities)
-					
+					JSONObject mentions = this.entitySentimentText(doc.get("content").toString(), doc.get("title").toString(), doc.get("date").toString());
 				} else {
-					//Pego os sentimentos das sentenças 
-					//o offset da entidade estará entre dois offsets das sentenças					
+					JSONArray entities = (JSONArray) doc.get("entities");
+					JSONArray sentiments = (JSONArray) doc.get("sentiments");
+					
+					for(int j = 0; j < entities.size(); j++){
+						
+						for(int k = 0; k < sentiments.size(); k++){
+							//Pego os sentimentos das sentenças 
+							//o offset da entidade estará entre dois offsets das sentenças		
+						}
+					}				
 				}
 
 			}
 			
 			//Salvar tanto na collection MENTIONS quanto na collection DOCUMENTS
-		} catch (UnknownHostException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
