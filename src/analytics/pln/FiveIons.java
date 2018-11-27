@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 
 import core.correlation.SerialTime;
 import core.entity.EntitySentiment;
@@ -27,9 +28,9 @@ import util.commom.Properties;
 public class FiveIons {
 
 	private static final String HOST = "localhost";
-	private static final String DATABASENAME = "db_poll_fakenews";
+	private static final String DATABASENAME = "db_news_brazil";
 	private static Save save = new Save();
-	private static EntityAnnotation entityAnnotation = new EntityAnnotation(HOST, DATABASENAME, "documents", "mentions");
+	private static EntityAnnotation entityAnnotation = new EntityAnnotation(HOST, DATABASENAME, "mentions", "documents");
 	private static SentimentAnalysis sentimentAnalysis = new SentimentAnalysis(HOST, DATABASENAME, "documents");
 	private static SentimentEntityAnnotation sentimentEntityAnnotation = new SentimentEntityAnnotation(HOST, DATABASENAME, "documents", "mentions");
 	private static Load load = new Load();
@@ -62,7 +63,7 @@ public class FiveIons {
 
 			// Anota os sentimentos das entidades
 			sentimentEntityAnnotation.entitySentimentText();
-		} catch (UnknownHostException e) {
+		} catch (UnknownHostException | ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

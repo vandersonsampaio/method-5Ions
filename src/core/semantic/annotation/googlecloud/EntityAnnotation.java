@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.google.cloud.language.v1.AnalyzeEntitiesRequest;
 import com.google.cloud.language.v1.AnalyzeEntitiesResponse;
@@ -17,6 +19,7 @@ import com.google.cloud.language.v1.EntityMention;
 import com.google.cloud.language.v1.LanguageServiceClient;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
+import com.mongodb.util.JSON;
 
 import io.db.LoadDocuments;
 import io.db.SaveDocuments;
@@ -127,19 +130,24 @@ public class EntityAnnotation implements Runnable {
 		}
 	}
 
-	public boolean analyzeEntitiesText() throws UnknownHostException {
+	public boolean analyzeEntitiesText() throws UnknownHostException, ParseException {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
 
-		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entityannotation", "false"),  1);
+		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entityannotation", "false"),  10);
 
 		int length = jarr.size() / NUMBERTHREAD;
 
 		if(length == 0)
 			return true;
-		
+	
 		for (int i = 0; i < NUMBERTHREAD; i++) {
+			System.out.println(jarr);
+			
+			List c = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
+			JSONArray a = new JSONArray();
+			a.add(c.toArray());
 			EntityAnnotation ea = new EntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
-					(JSONArray) jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size()));
+					a);
 
 			(new Thread(ea)).start();
 		}
