@@ -75,7 +75,6 @@ public class EntityAnnotation implements Runnable {
 				jsonEntity.put("name", entity.getName());
 				jsonEntity.put("salience", entity.getSalience());
 
-				
 				JSONObject jsonMetadata = new JSONObject();
 				for (Map.Entry<String, String> entry : entity.getMetadataMap().entrySet()) {
 					jsonMetadata.put(entry.getKey(), entry.getValue());
@@ -131,6 +130,7 @@ public class EntityAnnotation implements Runnable {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public boolean analyzeEntitiesText() throws UnknownHostException, ParseException {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
 
@@ -142,12 +142,18 @@ public class EntityAnnotation implements Runnable {
 			return true;
 
 		for (int i = 0; i < NUMBERTHREAD; i++) {
-			// List c = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) :
-			// jarr.size());
+			List<JSONObject> subList = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
+			
+			JSONArray slJarr = new JSONArray();
+			for(int du = 0; du < subList.size(); du++){
+				slJarr.add((JSONObject) subList.get(du));
+			}
+			
 			EntityAnnotation ea = new EntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
-					jarr);
+					slJarr);
 
 			Thread t = new Thread(ea);
+			//Temporário
 			t.start();
 			try {
 				t.join();
@@ -159,6 +165,7 @@ public class EntityAnnotation implements Runnable {
 		return true;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void run() {
 
@@ -170,17 +177,17 @@ public class EntityAnnotation implements Runnable {
 
 				BasicDBObject bdbo = (BasicDBObject) arr.get(i);
 
-				JSONObject entities = this.analyzeEntitiesText(bdbo.get("text").toString(),
-						bdbo.get("title").toString(), bdbo.get("date").toString());
+				JSONObject entities = this.analyzeEntitiesText(bdbo.getString("text"), bdbo.get("title").toString(),
+						bdbo.getString("date"));
 
 				BasicDBList ltEntities = new BasicDBList();
-				
+
 				JSONArray mentions = (JSONArray) entities.get("entities");
 				for (int j = 0; i < mentions.size(); i++) {
 					JSONObject entity = (JSONObject) mentions.get(j);
-	
-					ltEntities.add(new BasicDBObject().append("entity", entity.get("name").toString().toUpperCase()).append("type",
-							entity.get("type")));
+
+					ltEntities.add(new BasicDBObject().append("entity", entity.get("name").toString().toUpperCase())
+							.append("type", entity.get("type")));
 
 					BasicDBObject query = new BasicDBObject();
 					List<BasicDBObject> obj = new ArrayList<BasicDBObject>();
@@ -223,10 +230,8 @@ public class EntityAnnotation implements Runnable {
 						}
 
 						BasicDBList listDocuments = new BasicDBList();
-						listDocuments.add(new BasicDBObject()
-								.append("id_document", bdbo.get("_id"))
-								.append("date", bdbo.get("date"))
-								.append("number_direct_mentions", numberDirectMentions)
+						listDocuments.add(new BasicDBObject().append("id_document", bdbo.get("_id"))
+								.append("date", bdbo.get("date")).append("number_direct_mentions", numberDirectMentions)
 								.append("number_coref_mentions", numberCorefMentions).append("mentions", ltMentions));
 						newEntity.append("documents", listDocuments);
 
@@ -239,17 +244,22 @@ public class EntityAnnotation implements Runnable {
 						BasicDBList ltDocuments = (BasicDBList) oldEntity.get("documents");
 
 						int indexDocument = -1;
-						for(int k = 0; k < ltDocuments.size(); k++)
-							if(((BasicDBObject)ltDocuments.get(k)).get("id_document").toString().equals(bdbo.get("_id"))) {
+						for (int k = 0; k < ltDocuments.size(); k++)
+							if (((BasicDBObject) ltDocuments.get(k)).get("id_document").toString()
+									.equals(bdbo.get("_id"))) {
 								indexDocument = k;
 								break;
 							}
-						//Concluir daqui para baixo
-						JSONArray docMentions = (JSONArray) entity.get("mentions");
-						BasicDBList ltMentions = new BasicDBList();
 
-						int numberDirectMentions = 0;
-						int numberCorefMentions = 0;
+						JSONArray docMentions = (JSONArray) entity.get("mentions");
+						BasicDBList ltMentions = indexDocument == -1 ? new BasicDBList()
+								: (BasicDBList) ((BasicDBObject) ltDocuments.get(indexDocument)).get("mentions");
+
+						int numberDirectMentions = indexDocument == -1 ? 0
+								: ((BasicDBObject) ltDocuments.get(indexDocument)).getInt("number_direct_mentions");
+						int numberCorefMentions = indexDocument == -1 ? 0
+								: ((BasicDBObject) ltDocuments.get(indexDocument)).getInt("number_coref_mentions");
+
 						for (int k = 0; k < docMentions.size(); k++) {
 							String typeMention = ((JSONObject) docMentions.get(i)).get("type").toString();
 
@@ -258,18 +268,31 @@ public class EntityAnnotation implements Runnable {
 							else
 								numberCorefMentions++;
 
-							
-							ltMentions.add(new BasicDBObject().append("offset",
-									Integer.parseInt(
-											((JSONObject) docMentions.get(k)).get("offset").toString()))
-										.append("content", ((JSONObject) docMentions.get(k)).get("content").toString())
-										.append("type", typeMention));
+							ltMentions.add(new BasicDBObject()
+									.append("offset",
+											Integer.parseInt(
+													((JSONObject) docMentions.get(k)).get("offset").toString()))
+									.append("content", ((JSONObject) docMentions.get(k)).get("content").toString())
+									.append("type", typeMention));
 						}
 
-						ltDocuments.add(new BasicDBObject().append("id_document", bdbo.get("_id"))
-								.append("date", bdbo.get("date"))
-								.append("number_direct_mentions", numberDirectMentions)
-								.append("number_coref_mentions", numberCorefMentions).append("mentions", ltMentions));
+						if (indexDocument == -1) {
+							ltDocuments.add(new BasicDBObject().append("id_document", bdbo.get("_id"))
+									.append("date", bdbo.get("date"))
+									.append("number_direct_mentions", numberDirectMentions)
+									.append("number_coref_mentions", numberCorefMentions)
+									.append("mentions", ltMentions));
+						} else {
+							((BasicDBObject) ltDocuments.get(indexDocument)).remove("number_direct_mentions");
+							((BasicDBObject) ltDocuments.get(indexDocument)).remove("number_coref_mentions");
+							((BasicDBObject) ltDocuments.get(indexDocument)).remove("mentions");
+
+							((BasicDBObject) ltDocuments.get(indexDocument)).append("number_direct_mentions",
+									numberDirectMentions);
+							((BasicDBObject) ltDocuments.get(indexDocument)).append("number_coref_mentions",
+									numberCorefMentions);
+							((BasicDBObject) ltDocuments.get(indexDocument)).append("mentions", ltMentions);
+						}
 
 						if ((!oldEntity.containsKey("url_source") || oldEntity.get("url_source").equals(""))
 								&& (entity.containsKey("url_source") && !entity.get("url_source").equals("")))
@@ -281,17 +304,23 @@ public class EntityAnnotation implements Runnable {
 						sd.updateDocument(collectionNameSave,
 								new BasicDBObject().append("$set",
 										new BasicDBObject().append("documents", ltDocuments)),
-								new BasicDBObject().append("_id", oldEntity.get("_id").toString()));
+								new BasicDBObject().append("_id", oldEntity.get("_id")));
 					}
 				}
 
 				sd.updateDocument(collectionNameFind,
-						new BasicDBObject().append("$set", new BasicDBObject().append("is_entityannotation", "true")),
-						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
+						new BasicDBObject().append("$set",
+								new BasicDBObject().append("is_entityannotation", "true").append("entities",
+										ltEntities)),
+						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id")));
 
-				sd.updateDocument(collectionNameFind,
-						new BasicDBObject().append("$set", new BasicDBObject().append("entities", ltEntities)),
-						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
+				/*
+				 * sd.updateDocument(collectionNameFind, new
+				 * BasicDBObject().append("$set", new
+				 * BasicDBObject().append("entities", ltEntities)), new
+				 * BasicDBObject().append("_id", ((JSONObject)
+				 * arr.get(i)).get("_id")));
+				 */
 			}
 
 		} catch (Exception e) {
