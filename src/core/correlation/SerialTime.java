@@ -1,6 +1,7 @@
 package core.correlation;
 
 import java.io.File;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -11,8 +12,11 @@ import org.joda.time.DateTime;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import com.mongodb.BasicDBObject;
+
 import core.entity.EntitySentiment;
 import core.entity.SumarySentiment;
+import io.db.LoadDocuments;
 import io.file.Load;
 import io.file.Save;
 import util.commom.Dates;
@@ -725,5 +729,50 @@ public class SerialTime {
 		} else {
 			this.entitiesTime.put(date, lsEntSent);
 		}
+	}
+
+	public void generationSerialTime() throws UnknownHostException {
+		LoadDocuments ld = new LoadDocuments("", "", "");
+		//Recupera todas as mentions com algum status
+		JSONArray jarr = ld.findByQuery(null);
+		
+		for(int i = 0; i < jarr.size(); i++){
+			//Pega os documentos e começa agrupar data por data
+			JSONArray ltDocuments = (JSONArray) ((JSONObject) jarr.get(i)).get("documents");
+			
+			Hashtable<String, BasicDBObject> htSerialTime = new Hashtable<>();
+			String minDate = "";
+			String maxDate = "";
+			for(int j = 0; j < ltDocuments.size(); j++){
+				String date = ((JSONObject) ltDocuments.get(j)).get("date").toString();
+				
+				double score_direct_pos = Double.parseDouble(((JSONObject) ltDocuments.get(j)).get("score_direct_pos").toString());
+				double score_direct_neg = Double.parseDouble(((JSONObject) ltDocuments.get(j)).get("score_direct_neg").toString());
+				double score_coref_pos = Double.parseDouble(((JSONObject) ltDocuments.get(j)).get("score_coref_pos").toString());
+				double score_coref_neg = Double.parseDouble(((JSONObject) ltDocuments.get(j)).get("score_coref_neg").toString());
+				
+				if(htSerialTime.containsKey(date)){
+					BasicDBObject basic = htSerialTime.get(date);
+					basic.replace("score_direct_pos", basic.getDouble("score_direct_pos") + score_direct_pos);
+					basic.replace("score_direct_neg", basic.getDouble("score_direct_neg") + score_direct_neg);
+					basic.replace("score_coref_pos", basic.getDouble("score_coref_pos") + score_coref_pos);
+					basic.replace("score_coref_neg", basic.getDouble("score_coref_neg") + score_coref_neg);
+					
+					htSerialTime.replace(date, basic);
+				} else {
+					BasicDBObject basic = new BasicDBObject();
+					basic.append("score_direct_pos", score_direct_pos)
+						.append("score_direct_neg", score_direct_neg)
+						.append("score_coref_pos", score_coref_pos)
+						.append("score_coref_neg", score_coref_neg);
+					
+					htSerialTime.put(date, basic);
+				}
+				//salva com as datas ordenadas
+				//duas series são feitas SerialTimeShort e SerialTimeAcum
+				//Valores do atributo são date (timestamp) e sentiments (score_direct_pos, score_direct_neg, score_coref_pos, score_coref_neg)
+			}
+		}
+		
 	}
 }

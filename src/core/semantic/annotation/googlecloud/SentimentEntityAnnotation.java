@@ -1,6 +1,7 @@
 package core.semantic.annotation.googlecloud;
 
 import java.net.UnknownHostException;
+import java.util.List;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -60,8 +61,6 @@ public class SentimentEntityAnnotation implements Runnable {
 
 			json.put("date", date);
 			json.put("lengthText", text.split(" ").length);
-			
-			//json.put("tittle", tittle);
 			
 			JSONArray arrEntities = new JSONArray();
 			JSONObject objEntity = null;
@@ -151,6 +150,7 @@ public class SentimentEntityAnnotation implements Runnable {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public boolean entitySentimentText() throws UnknownHostException{
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
 
@@ -162,10 +162,24 @@ public class SentimentEntityAnnotation implements Runnable {
 			return true;
 		
 		for (int i = 0; i < NUMBERTHREAD; i++) {
+			List<JSONObject> subList = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
+			
+			JSONArray slJarr = new JSONArray();
+			for(int du = 0; du < subList.size(); du++){
+				slJarr.add((JSONObject) subList.get(du));
+			}
+			
 			SentimentEntityAnnotation sea = new SentimentEntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
-					(JSONArray) jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size()));
+					slJarr);
 
-			(new Thread(sea)).start();
+			Thread t = new Thread(sea);
+			//Temporário
+			t.start();
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return true;
@@ -187,8 +201,10 @@ public class SentimentEntityAnnotation implements Runnable {
 					
 					//colocar mentions em um for para a cada menção buscar sua correspondente
 					for(Object mention : mentionsArr){
-						double score_direct_sentiment = 0;
-						double score_coref_sentiment = 0;
+						double score_direct_sentiment_pos = 0;
+						double score_direct_sentiment_neg = 0;
+						double score_coref_sentiment_pos = 0;
+						double score_coref_sentiment_neg = 0;
 						
 						//buscar em ld a entity correspondente
 						JSONArray mentionsCollection = ld.findByQuery(new BasicDBObject().append("entity", ((JSONObject) mention).get("name").toString()).append("type", ((JSONObject) mention).get("type").toString()));
@@ -208,14 +224,25 @@ public class SentimentEntityAnnotation implements Runnable {
 						
 						//contabilizar o score_direct_sentiment e o score_coref_sentiment
 						for(int k = 0; k < mentionArr.size(); k++){
+							double value = (double) ((JSONObject) mentionArr.get(k)).get("score");
 							if(((JSONObject) mentionArr.get(k)).get("type").toString().equals("PROPER"))
-								score_direct_sentiment += (double) ((JSONObject) mentionArr.get(k)).get("score");
+								if(value >= 0)
+									score_direct_sentiment_pos += value;
+								else
+									score_direct_sentiment_neg += (value * -1);
 							else
-								score_coref_sentiment += (double) ((JSONObject) mentionArr.get(k)).get("score");
+								if(value >= 0)
+									score_coref_sentiment_pos += value;
+								else
+									score_coref_sentiment_neg += (value * -1);
 						}
 
 
-						((JSONObject) documents.get(indexDocument)).put("sentiments", new BasicDBObject().append("score_direct", score_direct_sentiment).append("score_coref", score_coref_sentiment));
+						((JSONObject) documents.get(indexDocument)).put("sentiments", new BasicDBObject()
+								.append("score_direct_pos", score_direct_sentiment_pos)
+								.append("score_direct_neg", score_direct_sentiment_neg)
+								.append("score_coref_pos", score_coref_sentiment_pos)
+								.append("score_coref_neg", score_coref_sentiment_neg));
 						
 						//Atualizar o documents do mentionsCollection adicionando o atributo sentiment com dois atributos (score_direct e score_coref)
 						//CONFIRMAR ISSO
@@ -230,8 +257,10 @@ public class SentimentEntityAnnotation implements Runnable {
 					JSONArray sentiments = (JSONArray) doc.get("sentiments");
 					
 					for(int j = 0; j < entities.size(); j++){
-						double score_direct_sentiment = 0;
-						double score_coref_sentiment = 0;
+						double score_direct_sentiment_pos = 0;
+						double score_direct_sentiment_neg = 0;
+						double score_coref_sentiment_pos = 0;
+						double score_coref_sentiment_neg = 0;
 						
 						//Consultar a entidade em mentions (entities possui atributos entity e type)
 						JSONObject entity = (JSONObject) entities.get(i);
@@ -269,12 +298,22 @@ public class SentimentEntityAnnotation implements Runnable {
 								}
 								
 								if(type.equals("PROPER"))
-									score_direct_sentiment += score;
+									if(score >= 0)
+										score_direct_sentiment_pos += score;
+									else
+										score_direct_sentiment_neg += (score * -1);
 								else
-									score_coref_sentiment += score;
+									if(score >= 0)
+										score_coref_sentiment_pos += score;
+									else
+										score_coref_sentiment_neg += (score * -1);
 							}
 							
-							((JSONObject) documents.get(indexDocument)).put("sentiments", new BasicDBObject().append("score_direct", score_direct_sentiment).append("score_coref", score_coref_sentiment));
+							((JSONObject) documents.get(indexDocument)).put("sentiments", new BasicDBObject()
+									.append("score_direct_pos", score_direct_sentiment_pos)
+									.append("score_direct_neg", score_direct_sentiment_neg)
+									.append("score_coref_pos", score_coref_sentiment_pos)
+									.append("score_coref_neg", score_coref_sentiment_neg));
 							
 							//Atualizar o documents do mentionsCollection adicionando o atributo sentiment com dois atributos (score_direct e score_coref)
 							//CONFIRMAR ISSO

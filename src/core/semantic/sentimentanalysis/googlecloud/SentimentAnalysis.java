@@ -1,6 +1,7 @@
 package core.semantic.sentimentanalysis.googlecloud;
 
 import java.net.UnknownHostException;
+import java.util.List;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -103,6 +104,7 @@ public class SentimentAnalysis implements Runnable {
 		// [END analyze_sentiment_file]
 	}
 
+	@SuppressWarnings("unchecked")
 	public boolean analyzeSentimentText() throws UnknownHostException{
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionName);
 
@@ -114,10 +116,24 @@ public class SentimentAnalysis implements Runnable {
 			return true;
 		
 		for (int i = 0; i < NUMBERTHREAD; i++) {
+			List<JSONObject> subList = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
+			
+			JSONArray slJarr = new JSONArray();
+			for(int du = 0; du < subList.size(); du++){
+				slJarr.add((JSONObject) subList.get(du));
+			}
+			
 			SentimentAnalysis sa = new SentimentAnalysis(host, databaseName, collectionName,
-					(JSONArray) jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size()));
+					slJarr);
 
-			(new Thread(sa)).start();
+			Thread t = new Thread(sa);
+			//Temporário
+			t.start();
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return true;
@@ -145,23 +161,25 @@ public class SentimentAnalysis implements Runnable {
 				}
 				
 				
-				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("is_entitysentiment", "true")),
-						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
+				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("is_entitysentiment", "true")
+						.append("score_sentiment", sentiment.get("score"))
+						.append("magnitude_sentiment", sentiment.get("magnitude"))
+						.append("sentiments", ltSentences)),
+						new BasicDBObject().append("_id", json.get("_id")));
 				
 				//Sentimento geral do documento
-				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("score_sentiment", sentiment.get("score"))),
-						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
+				/*sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("score_sentiment", sentiment.get("score"))),
+						new BasicDBObject().append("_id", json.get("_id")));
 				
 				//Magnitude do documento
 				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("magnitude_sentiment", sentiment.get("magnitude"))),
-						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
+						new BasicDBObject().append("_id", json.get("_id")));
 				
 				//Sentimento de cada uma das sentenças
 				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("sentiments", ltSentences)),
-						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
+						new BasicDBObject().append("_id", json.get("_id")));*/
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
