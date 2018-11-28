@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.google.cloud.language.v1.AnalyzeEntitiesRequest;
@@ -19,7 +18,6 @@ import com.google.cloud.language.v1.EntityMention;
 import com.google.cloud.language.v1.LanguageServiceClient;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.util.JSON;
 
 import io.db.LoadDocuments;
 import io.db.SaveDocuments;
@@ -69,36 +67,39 @@ public class EntityAnnotation implements Runnable {
 
 			// Print the response
 			for (Entity entity : response.getEntitiesList()) {
+				boolean input = false;
 
-				if (entity.getType().getNumber() >= 1 && entity.getType().getNumber() <= 3) {
-					JSONObject jsonEntity = new JSONObject();
+				JSONObject jsonEntity = new JSONObject();
 
-					jsonEntity.put("type", entity.getType().toString());
-					jsonEntity.put("name", entity.getName());
-					jsonEntity.put("salience", entity.getSalience());
+				jsonEntity.put("type", entity.getType().toString());
+				jsonEntity.put("name", entity.getName());
+				jsonEntity.put("salience", entity.getSalience());
 
-					JSONArray jsonAux = new JSONArray();
-					for (Map.Entry<String, String> entry : entity.getMetadataMap().entrySet()) {
-						JSONObject jsonMetadata = new JSONObject();
-						jsonMetadata.put(entry.getKey(), entry.getValue());
-						jsonAux.add(jsonMetadata);
-					}
-					jsonEntity.put("metadado", jsonAux);
-
-					jsonAux = new JSONArray();
-					for (EntityMention mention : entity.getMentionsList()) {
-						JSONObject jsonMention = new JSONObject();
-
-						jsonMention.put("offset", mention.getText().getBeginOffset());
-						jsonMention.put("content", mention.getText().getContent());
-						jsonMention.put("type", mention.getType().toString());
-
-						jsonAux.add(jsonMention);
-					}
-					jsonEntity.put("mentions", jsonAux);
-
-					jsonArray.add(jsonEntity);
+				
+				JSONObject jsonMetadata = new JSONObject();
+				for (Map.Entry<String, String> entry : entity.getMetadataMap().entrySet()) {
+					jsonMetadata.put(entry.getKey(), entry.getValue());
 				}
+				jsonEntity.put("metadado", jsonMetadata);
+
+				JSONArray jsonAux = new JSONArray();
+				for (EntityMention mention : entity.getMentionsList()) {
+					JSONObject jsonMention = new JSONObject();
+
+					jsonMention.put("offset", mention.getText().getBeginOffset());
+					jsonMention.put("content", mention.getText().getContent());
+					jsonMention.put("type", mention.getType().toString());
+
+					jsonAux.add(jsonMention);
+
+					if (mention.getType().toString().equals("PROPER"))
+						input = true;
+				}
+				jsonEntity.put("mentions", jsonAux);
+
+				if (input)
+					jsonArray.add(jsonEntity);
+
 			}
 		}
 
@@ -133,23 +134,26 @@ public class EntityAnnotation implements Runnable {
 	public boolean analyzeEntitiesText() throws UnknownHostException, ParseException {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
 
-		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entityannotation", "false"),  10);
+		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entityannotation", "false"), 10);
 
 		int length = jarr.size() / NUMBERTHREAD;
 
-		if(length == 0)
+		if (length == 0)
 			return true;
-	
-		for (int i = 0; i < NUMBERTHREAD; i++) {
-			System.out.println(jarr);
-			
-			List c = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
-			JSONArray a = new JSONArray();
-			a.add(c.toArray());
-			EntityAnnotation ea = new EntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
-					a);
 
-			(new Thread(ea)).start();
+		for (int i = 0; i < NUMBERTHREAD; i++) {
+			// List c = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) :
+			// jarr.size());
+			EntityAnnotation ea = new EntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
+					jarr);
+
+			Thread t = new Thread(ea);
+			t.start();
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return true;
@@ -164,100 +168,119 @@ public class EntityAnnotation implements Runnable {
 
 			for (int i = 0; i < arr.size(); i++) {
 
-				JSONObject json = (JSONObject) arr.get(i);
+				BasicDBObject bdbo = (BasicDBObject) arr.get(i);
 
-				JSONObject entities = this.analyzeEntitiesText(json.get("text").toString(),
-						json.get("title").toString(), json.get("date_published").toString());
+				JSONObject entities = this.analyzeEntitiesText(bdbo.get("text").toString(),
+						bdbo.get("title").toString(), bdbo.get("date").toString());
 
 				BasicDBList ltEntities = new BasicDBList();
 				
 				JSONArray mentions = (JSONArray) entities.get("entities");
 				for (int j = 0; i < mentions.size(); i++) {
 					JSONObject entity = (JSONObject) mentions.get(j);
-					
-					ltEntities.add(new BasicDBObject().append("entity", entity.get("entity")).append("type", entity.get("type")));
-					
+	
+					ltEntities.add(new BasicDBObject().append("entity", entity.get("name").toString().toUpperCase()).append("type",
+							entity.get("type")));
+
 					BasicDBObject query = new BasicDBObject();
 					List<BasicDBObject> obj = new ArrayList<BasicDBObject>();
-					obj.add(new BasicDBObject("entity", entity.get("entity")));
+					obj.add(new BasicDBObject("entity", entity.get("name").toString().toUpperCase()));
 					obj.add(new BasicDBObject("type", entity.get("type")));
 					query.put("$and", obj);
-					
-					JSONArray find = ld.findByQuery(query);
-					
-					//New Entity
-					if (find.size() == 0) {
-						
-						BasicDBObject newEntity = new BasicDBObject();
-						newEntity.append("entity", entity.get("entity").toString());
-						newEntity.append("type", entity.get("type").toString());
-						
-						if(entity.containsKey("metadado") && ((JSONObject) entity.get("metadado")).containsKey("wikipedia_url"))
-							newEntity.append("url_source", ((JSONObject) entity.get("metadado")).get("wikipedia_url"));
-						
-						JSONArray docMentions = (JSONArray) entity.get("mentions");
-						BasicDBList ltMentions = new BasicDBList();
-						
-						int numberDirectMentions = 0;
-						int numberCorefMentions = 0;
-						for(int k = 0; k < docMentions.size(); k++) {
-							String typeMention = ((JSONObject) docMentions.get(i)).get("type").toString();
-							
-							if(typeMention.equals("PROPER"))
-								numberDirectMentions++;
-							else
-								numberCorefMentions++;
-							
-							ltMentions.add(new BasicDBObject().append("offset", Double.parseDouble(((JSONObject) docMentions.get(i)).get("offset").toString()))
-									.append("content", ((JSONObject) docMentions.get(i)).get("content").toString())
-									.append("type", typeMention));
-						}
-						
-						newEntity.append("documents", new BasicDBList().add(new BasicDBObject().append("id_document", ((JSONObject) arr.get(i)).get("_id"))
-								.append("date_published", ((JSONObject) arr.get(i)).get("date_published"))
-								.append("number_direct_mentions", numberDirectMentions)
-								.append("number_coref_mentions", numberCorefMentions)
-								.append("mentions", ltMentions)));
-						
-						sd.insertDocument(collectionNameSave, newEntity);
-					
-					} else {//Update Old Entity
-						JSONObject oldEntity = (JSONObject) find.get(i);
 
-						//POSSÍVEL ERRO
-						BasicDBList ltDocuments = (BasicDBList) oldEntity.get("documents");
-						
+					JSONArray find = ld.findByQuery(query);
+
+					// New Entity
+					if (find.size() == 0) {
+
+						BasicDBObject newEntity = new BasicDBObject();
+						newEntity.append("entity", entity.get("name").toString().toUpperCase());
+						newEntity.append("type", entity.get("type").toString());
+
+						if (entity.containsKey("metadado")
+								&& ((JSONObject) entity.get("metadado")).containsKey("wikipedia_url"))
+							newEntity.append("url_source", ((JSONObject) entity.get("metadado")).get("wikipedia_url"));
+
 						JSONArray docMentions = (JSONArray) entity.get("mentions");
 						BasicDBList ltMentions = new BasicDBList();
-						
+
 						int numberDirectMentions = 0;
 						int numberCorefMentions = 0;
-						for(int k = 0; k < docMentions.size(); k++) {
-							String typeMention = ((JSONObject) docMentions.get(i)).get("type").toString();
-							
-							if(typeMention.equals("PROPER"))
+						for (int k = 0; k < docMentions.size(); k++) {
+							String typeMention = ((JSONObject) docMentions.get(k)).get("type").toString();
+
+							if (typeMention.equals("PROPER"))
 								numberDirectMentions++;
 							else
 								numberCorefMentions++;
-							
-							ltMentions.add(new BasicDBObject().append("offset", Double.parseDouble(((JSONObject) docMentions.get(i)).get("offset").toString()))
-									.append("content", ((JSONObject) docMentions.get(i)).get("content").toString())
+
+							ltMentions.add(new BasicDBObject()
+									.append("offset",
+											Integer.parseInt(
+													((JSONObject) docMentions.get(k)).get("offset").toString()))
+									.append("content", ((JSONObject) docMentions.get(k)).get("content").toString())
 									.append("type", typeMention));
 						}
-						
-						ltDocuments.add(new BasicDBObject().append("id_document", ((JSONObject) arr.get(i)).get("_id"))
-								.append("date_published", ((JSONObject) arr.get(i)).get("date_published"))
+
+						BasicDBList listDocuments = new BasicDBList();
+						listDocuments.add(new BasicDBObject()
+								.append("id_document", bdbo.get("_id"))
+								.append("date", bdbo.get("date"))
 								.append("number_direct_mentions", numberDirectMentions)
-								.append("number_coref_mentions", numberCorefMentions)
-								.append("mentions", ltMentions));
-						
-						if((!oldEntity.containsKey("url_source") || oldEntity.get("url_source").equals("")) && (entity.containsKey("url_source") && !entity.get("url_source").equals("")))
-							sd.updateDocument(collectionNameSave, 
-									new BasicDBObject().append("$set", new BasicDBObject().append("url_source", entity.get("url_source"))), 
+								.append("number_coref_mentions", numberCorefMentions).append("mentions", ltMentions));
+						newEntity.append("documents", listDocuments);
+
+						sd.insertDocument(collectionNameSave, newEntity);
+
+					} else {
+						// Update Old Entity
+						BasicDBObject oldEntity = (BasicDBObject) find.get(0);
+
+						BasicDBList ltDocuments = (BasicDBList) oldEntity.get("documents");
+
+						int indexDocument = -1;
+						for(int k = 0; k < ltDocuments.size(); k++)
+							if(((BasicDBObject)ltDocuments.get(k)).get("id_document").toString().equals(bdbo.get("_id"))) {
+								indexDocument = k;
+								break;
+							}
+						//Concluir daqui para baixo
+						JSONArray docMentions = (JSONArray) entity.get("mentions");
+						BasicDBList ltMentions = new BasicDBList();
+
+						int numberDirectMentions = 0;
+						int numberCorefMentions = 0;
+						for (int k = 0; k < docMentions.size(); k++) {
+							String typeMention = ((JSONObject) docMentions.get(i)).get("type").toString();
+
+							if (typeMention.equals("PROPER"))
+								numberDirectMentions++;
+							else
+								numberCorefMentions++;
+
+							
+							ltMentions.add(new BasicDBObject().append("offset",
+									Integer.parseInt(
+											((JSONObject) docMentions.get(k)).get("offset").toString()))
+										.append("content", ((JSONObject) docMentions.get(k)).get("content").toString())
+										.append("type", typeMention));
+						}
+
+						ltDocuments.add(new BasicDBObject().append("id_document", bdbo.get("_id"))
+								.append("date", bdbo.get("date"))
+								.append("number_direct_mentions", numberDirectMentions)
+								.append("number_coref_mentions", numberCorefMentions).append("mentions", ltMentions));
+
+						if ((!oldEntity.containsKey("url_source") || oldEntity.get("url_source").equals(""))
+								&& (entity.containsKey("url_source") && !entity.get("url_source").equals("")))
+							sd.updateDocument(collectionNameSave,
+									new BasicDBObject().append("$set",
+											new BasicDBObject().append("url_source", entity.get("url_source"))),
 									new BasicDBObject().append("_id", oldEntity.get("_id").toString()));
-						
-						sd.updateDocument(collectionNameSave, 
-								new BasicDBObject().append("$set", new BasicDBObject().append("documents", ltDocuments)), 
+
+						sd.updateDocument(collectionNameSave,
+								new BasicDBObject().append("$set",
+										new BasicDBObject().append("documents", ltDocuments)),
 								new BasicDBObject().append("_id", oldEntity.get("_id").toString()));
 					}
 				}
@@ -265,12 +288,12 @@ public class EntityAnnotation implements Runnable {
 				sd.updateDocument(collectionNameFind,
 						new BasicDBObject().append("$set", new BasicDBObject().append("is_entityannotation", "true")),
 						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
-				
+
 				sd.updateDocument(collectionNameFind,
 						new BasicDBObject().append("$set", new BasicDBObject().append("entities", ltEntities)),
 						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
 			}
-			
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
