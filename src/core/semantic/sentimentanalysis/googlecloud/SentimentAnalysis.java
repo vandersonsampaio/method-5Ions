@@ -129,10 +129,10 @@ public class SentimentAnalysis implements Runnable {
 			SaveDocuments sd = new SaveDocuments(host, databaseName, collectionName);
 
 			for (int i = 0; i < arr.size(); i++) {
-				JSONObject json = (JSONObject) arr.get(i);
+				BasicDBObject json = (BasicDBObject) arr.get(i);
 				
 				JSONObject sentiment = this.analyzeSentimentText(json.get("text").toString(),
-						json.get("title").toString(), json.get("date_published").toString());
+						json.get("title").toString(), json.get("date").toString());
 				
 				JSONArray sentences = (JSONArray) sentiment.get("sentences");
 				BasicDBList ltSentences = new BasicDBList();
@@ -153,7 +153,7 @@ public class SentimentAnalysis implements Runnable {
 						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
 				
 				//Magnitude do documento
-				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("score_sentiment", sentiment.get("magnitude"))),
+				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("magnitude_sentiment", sentiment.get("magnitude"))),
 						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
 				
 				//Sentimento de cada uma das sentenças

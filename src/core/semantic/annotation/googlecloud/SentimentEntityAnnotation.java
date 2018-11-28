@@ -71,7 +71,8 @@ public class SentimentEntityAnnotation implements Runnable {
 					objEntity = new JSONObject();
 					
 					objEntity.put("type", entity.getType().toString());
-					if(entity.getMetadataCount() == 0) {
+					objEntity.put("name", entity.getName());
+					/*if(entity.getMetadataCount() == 0) {
 						objEntity.put("name", entity.getName());
 					} else {
 						if(entity.getMetadataMap().get("wikipedia_url") != null){
@@ -80,7 +81,7 @@ public class SentimentEntityAnnotation implements Runnable {
 						}else{
 							objEntity.put("name", entity.getName());
 						}
-					}
+					}*/
 					
 					objEntity.put("salience", entity.getSalience());
 					
@@ -170,10 +171,9 @@ public class SentimentEntityAnnotation implements Runnable {
 		return true;
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public void run() {
-		//Se o idioma for diferente de Inglês devo agregar os sentimentos das sentenças que contem a entidade
-		//Se o idioma for inglês devo aplicar o webservice da google
 		try {
 			SaveDocuments sd = new SaveDocuments(host, databaseName, collectionNameSave);
 			LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameSave);
@@ -183,22 +183,114 @@ public class SentimentEntityAnnotation implements Runnable {
 				if(doc.get("language").toString().equals("en")){
 					//Pego as entidades contidas nesse documento (entities)
 					JSONObject mentions = this.entitySentimentText(doc.get("content").toString(), doc.get("title").toString(), doc.get("date").toString());
+					JSONArray mentionsArr = (JSONArray) mentions.get("entities");
+					
+					//colocar mentions em um for para a cada menção buscar sua correspondente
+					for(Object mention : mentionsArr){
+						double score_direct_sentiment = 0;
+						double score_coref_sentiment = 0;
+						
+						//buscar em ld a entity correspondente
+						JSONArray mentionsCollection = ld.findByQuery(new BasicDBObject().append("entity", ((JSONObject) mention).get("name").toString()).append("type", ((JSONObject) mention).get("type").toString()));
+					
+						//pegar em mentionscollection o document correspondente
+						JSONArray documents = (JSONArray) ((JSONObject) mentionsCollection.get(0)).get("documents");
+						int indexDocument = -1;
+						
+						for(int k = 0; k < documents.size(); k++){
+							if(((JSONObject) documents.get(k)).get("id_document").equals(doc.get("id"))){
+								indexDocument = k;
+								break;
+							}
+						}
+						
+						JSONArray mentionArr = (JSONArray) ((JSONObject) mention).get("mentions");
+						
+						//contabilizar o score_direct_sentiment e o score_coref_sentiment
+						for(int k = 0; k < mentionArr.size(); k++){
+							if(((JSONObject) mentionArr.get(k)).get("type").toString().equals("PROPER"))
+								score_direct_sentiment += (double) ((JSONObject) mentionArr.get(k)).get("score");
+							else
+								score_coref_sentiment += (double) ((JSONObject) mentionArr.get(k)).get("score");
+						}
+
+
+						((JSONObject) documents.get(indexDocument)).put("sentiments", new BasicDBObject().append("score_direct", score_direct_sentiment).append("score_coref", score_coref_sentiment));
+						
+						//Atualizar o documents do mentionsCollection adicionando o atributo sentiment com dois atributos (score_direct e score_coref)
+						//CONFIRMAR ISSO
+						sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("documents", documents)),
+								new BasicDBObject().append("entity", ((JSONObject) mention).get("entity").toString()).append("type", ((JSONObject) mention).get("type").toString()));
+					}
+					
 				} else {
 					JSONArray entities = (JSONArray) doc.get("entities");
+					
+					//buscar em doc as sentenças e seus sentimentos
 					JSONArray sentiments = (JSONArray) doc.get("sentiments");
 					
 					for(int j = 0; j < entities.size(); j++){
+						double score_direct_sentiment = 0;
+						double score_coref_sentiment = 0;
 						
-						for(int k = 0; k < sentiments.size(); k++){
-							//Pego os sentimentos das sentenças 
-							//o offset da entidade estará entre dois offsets das sentenças		
+						//Consultar a entidade em mentions (entities possui atributos entity e type)
+						JSONObject entity = (JSONObject) entities.get(i);
+						JSONArray mentionsCollection = ld.findByQuery(new BasicDBObject().append("entity", entity.get("entity").toString()).append("type", entity.get("type").toString()));
+						
+						if(mentionsCollection.size() > 0){
+							//pegar o atributo documents do retorno da linha anterior
+							JSONArray documents = (JSONArray) ((JSONObject) mentionsCollection.get(0)).get("documents");
+							int indexDocument = -1;
+							
+							//pesquisar o documento que possui o mesmo id_documento da variável doc
+							for(int k = 0; k < documents.size(); k++){
+								if(((JSONObject) documents.get(k)).get("id_document").equals(doc.get("id"))){
+									indexDocument = k;
+									break;
+								}
+							}
+								
+							//pegar o atributo metions da linha anteior
+							for(Object mention : (JSONArray) ((JSONObject) documents.get(indexDocument)).get("mentions")){
+								int offset = (int) ((JSONObject) mention).get("offset");
+								String type = ((JSONObject) mention).get("type").toString();
+								double score = 0;
+								//identificar qual sentença a mentions está
+								//se a mentions for proper atualizar o atributo score_direct_sentiment, senão atualizar score_coref_sentiment
+								//atualizar a collection mentions	
+								for(int k = 0; k < sentiments.size(); k++){
+									//Pego os sentimentos das sentenças 
+									//o offset da entidade estará entre dois offsets das sentenças
+									if((k + 1 == sentiments.size()) || 
+											(((int) ((JSONObject) sentiments.get(k)).get("offset")) <= offset && 
+												((int) ((JSONObject) sentiments.get(k+1)).get("offset")) >= offset))
+										score = (double) ((JSONObject) sentiments.get(k)).get("score");
+											
+								}
+								
+								if(type.equals("PROPER"))
+									score_direct_sentiment += score;
+								else
+									score_coref_sentiment += score;
+							}
+							
+							((JSONObject) documents.get(indexDocument)).put("sentiments", new BasicDBObject().append("score_direct", score_direct_sentiment).append("score_coref", score_coref_sentiment));
+							
+							//Atualizar o documents do mentionsCollection adicionando o atributo sentiment com dois atributos (score_direct e score_coref)
+							//CONFIRMAR ISSO
+							sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("documents", documents)),
+									new BasicDBObject().append("entity", entity.get("entity").toString()).append("type", entity.get("type").toString()));
 						}
 					}				
 				}
 
+				//Atualizar o document
+				//CONFIRMAR ISSO
+				sd.updateDocument(collectionNameFind,
+						new BasicDBObject().append("$set", new BasicDBObject().append("is_entitysentiment", "true")),
+						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id").toString()));
 			}
 			
-			//Salvar tanto na collection MENTIONS quanto na collection DOCUMENTS
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
