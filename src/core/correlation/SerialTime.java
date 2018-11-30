@@ -1,6 +1,8 @@
 package core.correlation;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -133,60 +135,54 @@ public class SerialTime {
 		return serialTimeResult;
 	}
 
-	public boolean summarizationMetric() {
+	public boolean summarizationMetric() throws ClassNotFoundException, InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 
 		// Carregar todas as entidades que sofreram atualização na serial_time
 		JSONArray jarrEntities = new JSONArray();
 
 		for (int i = 0; i < jarrEntities.size(); i++) {
-			splitDay((JSONObject) jarrEntities.get(i));
-			splitMonth((JSONObject) jarrEntities.get(i));
-			splitWeek((JSONObject) jarrEntities.get(i));
-			splitCustom((JSONObject) jarrEntities.get(i)); // Consulta a
-															// collection PERIOD
-															// no banco de dados
-															// e realiza calculo
-															// de metrica para
-															// todos
+			splitDay((BasicDBObject) jarrEntities.get(i));
+			splitMonth((BasicDBObject) jarrEntities.get(i));
+			splitWeek((BasicDBObject) jarrEntities.get(i));
+			splitCustom((BasicDBObject) jarrEntities.get(i));
+			// Consulta a collection PERIOD no banco de dados e realiza calculo
+			// de metrica para todos
 		}
 
 		return true;
 	}
 
-	private void splitDay(JSONObject entity) {
+	private void splitDay(BasicDBObject entity)
+			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, NoSuchMethodException, SecurityException {
 
-		/*
-		 * Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new
-		 * Hashtable<>(); List<EntitySentiment> listAux = null;
-		 * 
-		 * int order = 1; DateTime dtAux = dtInitial; while
-		 * (dtAux.isBefore(dtEnd.getMillis()) ||
-		 * dtAux.isEqual(dtEnd.getMillis())) { listAux = new
-		 * ArrayList<EntitySentiment>();
-		 * 
-		 * if (entitySerialTime.get(dtAux.getMillis()) != null)
-		 * listAux.add(entitySerialTime.get(dtAux.getMillis()));
-		 * 
-		 * Hashtable<String, Float> htAuxValues = serialTimeResult.get(order);
-		 * if (htAuxValues == null) htAuxValues = new Hashtable<>();
-		 * 
-		 * if (listAux.size() > 0) { htAuxValues.put("s1",
-		 * s1PositivePerNegativa(listAux)); htAuxValues.put("s2",
-		 * s2PositivePorPostiveNegative(listAux)); htAuxValues.put("s3",
-		 * s3NegativePorPositiveNegative(listAux)); htAuxValues.put("s4",
-		 * s4PositiveMenusNegativePerPostivieNegative(listAux));
-		 * 
-		 * serialTimeResult.put(order++, htAuxValues); } else {
-		 * htAuxValues.put("s1", (float) 0); htAuxValues.put("s2", (float) 0);
-		 * htAuxValues.put("s3", (float) 0); htAuxValues.put("s4", (float) 0);
-		 * 
-		 * serialTimeResult.put(order++, htAuxValues); }
-		 * 
-		 * dtAux = dtAux.plusDays(1); }
-		 */
+		// serialTimeShort
+		// SerialTimeAcum
+
+		// sumarize_metric: {metric: , name: '', description: '', [{date: '',
+		// value_direct: '', value_coref: '', value_total: ''}]}
+
+		Class<?> metricClass = Class.forName("core.summarizationmetric.Metric");
+
+		Object metricObject = metricClass.newInstance();
+		Method calculateMethod = metricClass.getMethod("calculatedMetric", double.class, double.class);
+
+		double ret = (double) calculateMethod.invoke(metricObject, 1, 2);
+		System.out.println(ret);
+
+		BasicDBList ltCalcules = new BasicDBList();
+		for (int i = 0; i < 0; i++) {
+			ltCalcules
+					.add(new BasicDBObject().append("date", null)
+							.append("value_direct", (double) calculateMethod.invoke(metricObject, 1, 2))
+							.append("value_coref", (double) calculateMethod.invoke(metricObject, 1, 2))
+							.append("value_total", (double) calculateMethod.invoke(metricObject, 1, 2)));
+		}
+
 	}
 
-	private void splitWeek(JSONObject entity) {
+	private void splitWeek(BasicDBObject entity) {
 
 		/*
 		 * Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new
@@ -225,7 +221,7 @@ public class SerialTime {
 		 */
 	}
 
-	private void splitMonth(JSONObject entity) {
+	private void splitMonth(BasicDBObject entity) {
 
 		/*
 		 * Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new
@@ -262,7 +258,7 @@ public class SerialTime {
 		 */
 	}
 
-	private void splitCustom(JSONObject entity) {
+	private void splitCustom(BasicDBObject entity) {
 
 		/*
 		 * Hashtable<Integer, Hashtable<String, Float>> serialTimeResult = new
@@ -797,7 +793,7 @@ public class SerialTime {
 				if (htSerialTime.containsKey(date)) {
 					ltSerialTimeS
 							.add(new BasicDBObject().append("date", date).append("sentiments", htSerialTime.get(date)));
-					
+
 					BasicDBObject sent = htSerialTime.get(date);
 					score_direct_pos += sent.getDouble("score_direct_pos");
 					score_direct_neg += sent.getDouble("score_direct_neg");
@@ -814,13 +810,13 @@ public class SerialTime {
 
 				LocalDateTime.from(date.toInstant()).plusDays(1);
 			}
-			
+
 			// salva com as datas ordenadas
-			sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("is_serialtime", "true")
-					.append("serial_time_short", ltSerialTimeS)
-					.append("serial_time_acum", ltSerialTimeA)),
+			sd.updateDocument(
+					new BasicDBObject().append("$set", new BasicDBObject().append("is_serialtime", "true")
+							.append("serial_time_short", ltSerialTimeS).append("serial_time_acum", ltSerialTimeA)),
 					new BasicDBObject().append("_id", ((JSONObject) jarr.get(i)).get("_id").toString()));
-			
+
 		}
 
 	}

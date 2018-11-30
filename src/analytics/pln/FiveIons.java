@@ -1,6 +1,7 @@
 package analytics.pln;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -30,9 +31,11 @@ public class FiveIons {
 	private static final String HOST = "localhost";
 	private static final String DATABASENAME = "db_news_brazil";
 	private static Save save = new Save();
-	private static EntityAnnotation entityAnnotation = new EntityAnnotation(HOST, DATABASENAME, "mentions", "documents");
+	private static EntityAnnotation entityAnnotation = new EntityAnnotation(HOST, DATABASENAME, "mentions",
+			"documents");
 	private static SentimentAnalysis sentimentAnalysis = new SentimentAnalysis(HOST, DATABASENAME, "documents");
-	private static SentimentEntityAnnotation sentimentEntityAnnotation = new SentimentEntityAnnotation(HOST, DATABASENAME, "documents", "mentions");
+	private static SentimentEntityAnnotation sentimentEntityAnnotation = new SentimentEntityAnnotation(HOST,
+			DATABASENAME, "documents", "mentions");
 	private static Load load = new Load();
 	private static SerialTime serialTime = new SerialTime(HOST, DATABASENAME, "mentions");
 	private static SumyPython sumy = new SumyPython();
@@ -55,33 +58,35 @@ public class FiveIons {
 		try {
 			// Anota as entidades
 			entityAnnotation.analyzeEntitiesText();
-		
+
 			System.exit(1);
-			
+
 			// Anota os sentimentos
 			sentimentAnalysis.analyzeSentimentText();
 
 			// Anota os sentimentos das entidades
 			sentimentEntityAnnotation.entitySentimentText();
-		
-			//processo deverá ser integrado a análise de sentimentos
-			// Carrega o sentimento das entidades para gerar as 7-uplas
-			//if (genneration7uplas)
-			//	generation7uplas("25/12/2016", "25/09/2017");
 
-			// Carrega as 5-uplas para sumarizar as medidas de acordo com a granularidade
+			// processo deverá ser integrado a análise de sentimentos
+			// Carrega o sentimento das entidades para gerar as 7-uplas
+			// if (genneration7uplas)
+			// generation7uplas("25/12/2016", "25/09/2017");
+
+			// Carrega as 5-uplas para sumarizar as medidas de acordo com a
+			// granularidade
 			// desejada (Diário, Semanal, Mensal, Customizada)
 			// Short-Time e Acumulative (Falta o acumulative)
-			// Não será mais passado parâmetros nesse método, o processo será em todo o tempo das publicações para todas as métricas implementadas
-			//if (calculationMetrics)
-			//	summarizationMetric("25/12/2016", "25/09/2017");
-			//serialTime.summarizationMetric();
+			// Não será mais passado parâmetros nesse método, o processo será em
+			// todo o tempo das publicações para todas as métricas implementadas
+			// if (calculationMetrics)
+			// summarizationMetric("25/12/2016", "25/09/2017");
+			// serialTime.summarizationMetric();
 			serialTime.generationSerialTime();
 			serialTime.summarizationMetric();
 
-		
-		} catch (UnknownHostException | ParseException | java.text.ParseException e) {
-			// TODO Auto-generated catch block
+		} catch (UnknownHostException | ParseException | java.text.ParseException | ClassNotFoundException
+				| InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
+				| NoSuchMethodException | SecurityException e) {
 			e.printStackTrace();
 		}
 		// Correlação das duas séries temporais
