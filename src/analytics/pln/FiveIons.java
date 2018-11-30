@@ -34,7 +34,7 @@ public class FiveIons {
 	private static SentimentAnalysis sentimentAnalysis = new SentimentAnalysis(HOST, DATABASENAME, "documents");
 	private static SentimentEntityAnnotation sentimentEntityAnnotation = new SentimentEntityAnnotation(HOST, DATABASENAME, "documents", "mentions");
 	private static Load load = new Load();
-	private static SerialTime serialTime = new SerialTime();
+	private static SerialTime serialTime = new SerialTime(HOST, DATABASENAME, "mentions");
 	private static SumyPython sumy = new SumyPython();
 	private static AdapterWeka prediction = new AdapterWeka();
 
@@ -80,7 +80,7 @@ public class FiveIons {
 			serialTime.summarizationMetric();
 
 		
-		} catch (UnknownHostException | ParseException e) {
+		} catch (UnknownHostException | ParseException | java.text.ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
