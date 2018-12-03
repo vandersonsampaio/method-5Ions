@@ -35,7 +35,7 @@ public class FiveIons {
 			"documents");
 	private static SentimentAnalysis sentimentAnalysis = new SentimentAnalysis(HOST, DATABASENAME, "documents");
 	private static SentimentEntityAnnotation sentimentEntityAnnotation = new SentimentEntityAnnotation(HOST,
-			DATABASENAME, "documents", "mentions");
+			DATABASENAME, "mentions", "documents");
 	private static Load load = new Load();
 	private static SerialTime serialTime = new SerialTime(HOST, DATABASENAME, "mentions");
 	private static SumyPython sumy = new SumyPython();
@@ -67,6 +67,7 @@ public class FiveIons {
 			// Anota os sentimentos das entidades
 			sentimentEntityAnnotation.entitySentimentText();
 
+			System.exit(0);
 			// processo deverá ser integrado a análise de sentimentos
 			// Carrega o sentimento das entidades para gerar as 7-uplas
 			// if (genneration7uplas)

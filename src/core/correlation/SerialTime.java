@@ -30,11 +30,14 @@ import io.file.Save;
 import util.commom.Dates;
 import util.commom.Properties;
 
-public class SerialTime {
+public class SerialTime implements Runnable {
 
 	private Hashtable<Long, List<EntitySentiment>> entitiesTime;
 	private Hashtable<Long, Integer> numbersDocs;
 	private Hashtable<Long, Integer> lengthTexts;
+
+	private final int NUMBERTHREAD = 4;
+	private JSONArray arr;
 	private String host;
 	private String databaseName;
 	private String collection;
@@ -53,6 +56,17 @@ public class SerialTime {
 		this.host = host;
 		this.databaseName = databaseName;
 		this.collection = collection;
+	}
+
+	public SerialTime(String host, String databaseName, String collection, JSONArray arr) {
+		this.entitiesTime = new Hashtable<>();
+		this.numbersDocs = new Hashtable<Long, Integer>();
+		this.lengthTexts = new Hashtable<Long, Integer>();
+
+		this.host = host;
+		this.databaseName = databaseName;
+		this.collection = collection;
+		this.arr = arr;
 	}
 
 	public Hashtable<Long, Hashtable<String, EntitySentiment>> generationSerie(DateTime inicialDate,
@@ -173,11 +187,10 @@ public class SerialTime {
 
 		BasicDBList ltCalcules = new BasicDBList();
 		for (int i = 0; i < 0; i++) {
-			ltCalcules
-					.add(new BasicDBObject().append("date", null)
-							.append("value_direct", (double) calculateMethod.invoke(metricObject, 1, 2))
-							.append("value_coref", (double) calculateMethod.invoke(metricObject, 1, 2))
-							.append("value_total", (double) calculateMethod.invoke(metricObject, 1, 2)));
+			ltCalcules.add(new BasicDBObject().append("date", null)
+					.append("value_direct", (double) calculateMethod.invoke(metricObject, 1, 2))
+					.append("value_coref", (double) calculateMethod.invoke(metricObject, 1, 2))
+					.append("value_total", (double) calculateMethod.invoke(metricObject, 1, 2)));
 		}
 
 	}
@@ -725,99 +738,138 @@ public class SerialTime {
 		}
 	}
 
-	public void generationSerialTime() throws UnknownHostException, ParseException {
+	@SuppressWarnings("unchecked")
+	public boolean generationSerialTime() throws UnknownHostException, ParseException {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collection);
-		SaveDocuments sd = new SaveDocuments(host, databaseName, collection);
 
-		// Recupera todas as mentions com algum status
 		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_serialtime", "false"), 1);
 
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		int length = jarr.size() / NUMBERTHREAD;
 
-		for (int i = 0; i < jarr.size(); i++) {
-			// Pega os documentos e começa agrupar data por data
-			JSONArray ltDocuments = (JSONArray) ((JSONObject) jarr.get(i)).get("documents");
+		if (length == 0)
+			return true;
 
-			Hashtable<Date, BasicDBObject> htSerialTime = new Hashtable<>();
-			Date dateMin = null;
-			Date dateMax = null;
-			for (int j = 0; j < ltDocuments.size(); j++) {
-				Date date = formatter.parse(((JSONObject) ltDocuments.get(j)).get("date").toString());
+		// Thread[] tr = new Thread[NUMBERTHREAD];
+		for (int i = 0; i < NUMBERTHREAD; i++) {
+			List<BasicDBObject> subList = jarr.subList(length * i,
+					i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
 
-				if (dateMin == null && dateMax == null)
-					dateMin = dateMax = date;
-				else if (date.before(dateMin))
-					dateMin = date;
-				else if (date.after(dateMax))
-					dateMax = date;
-
-				double score_direct_pos = Double
-						.parseDouble(((JSONObject) ltDocuments.get(j)).get("score_direct_pos").toString());
-				double score_direct_neg = Double
-						.parseDouble(((JSONObject) ltDocuments.get(j)).get("score_direct_neg").toString());
-				double score_coref_pos = Double
-						.parseDouble(((JSONObject) ltDocuments.get(j)).get("score_coref_pos").toString());
-				double score_coref_neg = Double
-						.parseDouble(((JSONObject) ltDocuments.get(j)).get("score_coref_neg").toString());
-
-				if (htSerialTime.containsKey(date)) {
-					BasicDBObject basic = htSerialTime.get(date);
-					basic.replace("score_direct_pos", basic.getDouble("score_direct_pos") + score_direct_pos);
-					basic.replace("score_direct_neg", basic.getDouble("score_direct_neg") + score_direct_neg);
-					basic.replace("score_coref_pos", basic.getDouble("score_coref_pos") + score_coref_pos);
-					basic.replace("score_coref_neg", basic.getDouble("score_coref_neg") + score_coref_neg);
-
-					htSerialTime.replace(date, basic);
-				} else {
-					BasicDBObject basic = new BasicDBObject();
-					basic.append("score_direct_pos", score_direct_pos).append("score_direct_neg", score_direct_neg)
-							.append("score_coref_pos", score_coref_pos).append("score_coref_neg", score_coref_neg);
-
-					htSerialTime.put(date, basic);
-				}
+			JSONArray slJarr = new JSONArray();
+			for (int du = 0; du < subList.size(); du++) {
+				slJarr.add((BasicDBObject) subList.get(du));
 			}
 
-			Date date = dateMin;
-			BasicDBList ltSerialTimeS = new BasicDBList();
-			BasicDBList ltSerialTimeA = new BasicDBList();
-			double score_direct_pos = 0;
-			double score_direct_neg = 0;
-			double score_coref_pos = 0;
-			double score_coref_neg = 0;
+			SerialTime st = new SerialTime(host, databaseName, collection, slJarr);
 
-			// duas series são feitas SerialTimeShort e SerialTimeAcum
-			// Valores do atributo são date (timestamp) e sentiments
-			// (score_direct_pos, score_direct_neg, score_coref_pos,
-			// score_coref_neg)
-			while (date.before(dateMax) || date.equals(dateMax)) {
-				if (htSerialTime.containsKey(date)) {
-					ltSerialTimeS
-							.add(new BasicDBObject().append("date", date).append("sentiments", htSerialTime.get(date)));
-
-					BasicDBObject sent = htSerialTime.get(date);
-					score_direct_pos += sent.getDouble("score_direct_pos");
-					score_direct_neg += sent.getDouble("score_direct_neg");
-					score_coref_pos += sent.getDouble("score_coref_pos");
-					score_coref_neg += sent.getDouble("score_coref_neg");
-				} else {
-					ltSerialTimeS.add(new BasicDBObject().append("date", date).append("sentiments", null));
-				}
-
-				ltSerialTimeA.add(new BasicDBObject().append("date", date).append("sentiments",
-						new BasicDBObject().append("score_direct_pos", score_direct_pos)
-								.append("score_direct_neg", score_direct_neg).append("score_coref_pos", score_coref_pos)
-								.append("score_coref_neg", score_coref_neg)));
-
-				LocalDateTime.from(date.toInstant()).plusDays(1);
+			Thread t = new Thread(st);
+			// Temporário
+			t.start();
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 
-			// salva com as datas ordenadas
-			sd.updateDocument(
-					new BasicDBObject().append("$set", new BasicDBObject().append("is_serialtime", "true")
-							.append("serial_time_short", ltSerialTimeS).append("serial_time_acum", ltSerialTimeA)),
-					new BasicDBObject().append("_id", ((JSONObject) jarr.get(i)).get("_id").toString()));
-
+			// tr[i] = new Thread(st);
+			// tr[i].start();
 		}
 
+		/*
+		 * boolean isAlive = true; while(isAlive) { Thread.sleep(5000);
+		 * System.out.println("Entity Annotation is alive!");
+		 * 
+		 * isAlive = false; for(int i = 0; i < NUMBERTHREAD; i++) isAlive =
+		 * isAlive || tr[i].isAlive(); }
+		 */
+
+		return true;
+	}
+
+	@Override
+	public void run() {
+		try {
+			SaveDocuments sd = new SaveDocuments(host, databaseName, collection);
+
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
+			for (int i = 0; i < arr.size(); i++) {
+				BasicDBList ltDocuments = (BasicDBList) ((BasicDBObject) arr.get(i)).get("documents");
+
+				Hashtable<Date, BasicDBObject> htSerialTime = new Hashtable<>();
+				Date dateMin = null;
+				Date dateMax = null;
+				for (int j = 0; j < ltDocuments.size(); j++) {
+					Date date = formatter.parse(((BasicDBObject) ltDocuments.get(j)).getString("date"));
+
+					if (dateMin == null && dateMax == null)
+						dateMin = dateMax = date;
+					else if (date.before(dateMin))
+						dateMin = date;
+					else if (date.after(dateMax))
+						dateMax = date;
+
+					double score_direct_pos = ((BasicDBObject) ltDocuments.get(j)).getDouble("score_direct_pos");
+					double score_direct_neg = ((BasicDBObject) ltDocuments.get(j)).getDouble("score_direct_neg");
+					double score_coref_pos = ((BasicDBObject) ltDocuments.get(j)).getDouble("score_coref_pos");
+					double score_coref_neg = ((BasicDBObject) ltDocuments.get(j)).getDouble("score_coref_neg");
+
+					if (htSerialTime.containsKey(date)) {
+						BasicDBObject basic = htSerialTime.get(date);
+						basic.replace("score_direct_pos", basic.getDouble("score_direct_pos") + score_direct_pos);
+						basic.replace("score_direct_neg", basic.getDouble("score_direct_neg") + score_direct_neg);
+						basic.replace("score_coref_pos", basic.getDouble("score_coref_pos") + score_coref_pos);
+						basic.replace("score_coref_neg", basic.getDouble("score_coref_neg") + score_coref_neg);
+
+						htSerialTime.replace(date, basic);
+					} else {
+						BasicDBObject basic = new BasicDBObject();
+						basic.append("score_direct_pos", score_direct_pos)
+							.append("score_direct_neg", score_direct_neg)
+							.append("score_coref_pos", score_coref_pos)
+							.append("score_coref_neg", score_coref_neg);
+
+						htSerialTime.put(date, basic);
+					}
+				}
+
+				Date date = dateMin;
+				BasicDBList ltSerialTimeS = new BasicDBList();
+				BasicDBList ltSerialTimeA = new BasicDBList();
+				double score_direct_pos = 0;
+				double score_direct_neg = 0;
+				double score_coref_pos = 0;
+				double score_coref_neg = 0;
+
+				while (date.before(dateMax) || date.equals(dateMax)) {
+					if (htSerialTime.containsKey(date)) {
+						ltSerialTimeS.add(
+								new BasicDBObject().append("date", date).append("sentiments", htSerialTime.get(date)));
+
+						BasicDBObject sent = htSerialTime.get(date);
+						score_direct_pos += sent.getDouble("score_direct_pos");
+						score_direct_neg += sent.getDouble("score_direct_neg");
+						score_coref_pos += sent.getDouble("score_coref_pos");
+						score_coref_neg += sent.getDouble("score_coref_neg");
+					} else {
+						ltSerialTimeS.add(new BasicDBObject().append("date", date).append("sentiments", null));
+					}
+
+					ltSerialTimeA.add(new BasicDBObject().append("date", date).append("sentiments", new BasicDBObject()
+							.append("score_direct_pos", score_direct_pos).append("score_direct_neg", score_direct_neg)
+							.append("score_coref_pos", score_coref_pos).append("score_coref_neg", score_coref_neg)));
+
+					LocalDateTime.from(date.toInstant()).plusDays(1);
+				}
+
+				// salva com as datas ordenadas
+				sd.updateDocument(
+						new BasicDBObject().append("$set", new BasicDBObject().append("is_serialtime", "true")
+								.append("serial_time_short", ltSerialTimeS).append("serial_time_acum", ltSerialTimeA)),
+						new BasicDBObject().append("_id", ((BasicDBObject) arr.get(i)).get("_id")));
+
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 }
