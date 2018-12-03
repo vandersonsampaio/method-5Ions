@@ -87,7 +87,7 @@ public class MongoDB {
 		return cursor.count() > 0;
 	}
 	
-	public void updateDocument(DBObject alter, DBObject query){
-		collection.update(alter, query);
+	public void updateDocument(DBObject alter, DBObject search){
+		collection.update(search, alter);
 	}
 }

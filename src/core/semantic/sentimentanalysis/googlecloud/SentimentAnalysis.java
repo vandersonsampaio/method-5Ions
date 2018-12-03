@@ -20,7 +20,7 @@ import io.db.SaveDocuments;
 
 public class SentimentAnalysis implements Runnable {
 
-	private final int NUMBERTHREAD = 1;
+	private final int NUMBERTHREAD = 4;
 	private JSONArray arr;
 	private String host;
 	private String databaseName;
@@ -56,6 +56,7 @@ public class SentimentAnalysis implements Runnable {
 				json.put("date", date);
 
 				int i = 1;
+				int beginOffset = 0;
 				JSONArray arrSentences = new JSONArray();
 				JSONObject objAux = null;
 
@@ -67,7 +68,12 @@ public class SentimentAnalysis implements Runnable {
 
 					objAux.put("number", i++);
 
-					objAux.put("offset", sentence.getText().getBeginOffset());
+					if(sentence.getText().getBeginOffset() == -1) {
+						objAux.put("offset", beginOffset);
+						beginOffset += sentence.getText().getContent().length();
+					} else {
+						objAux.put("offset", sentence.getText().getBeginOffset());
+					}
 					if (sentence.getSentiment() == null) {
 						objAux.put("score", 0);
 						objAux.put("magnitude", 0);
@@ -105,35 +111,40 @@ public class SentimentAnalysis implements Runnable {
 	}
 
 	@SuppressWarnings("unchecked")
-	public boolean analyzeSentimentText() throws UnknownHostException{
+	public boolean analyzeSentimentText() throws UnknownHostException, InterruptedException{
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionName);
 
-		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_sentiment", "false"),  1);
+		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_sentiment", "false"),  1104);
 
 		int length = jarr.size() / NUMBERTHREAD;
 
 		if(length == 0)
 			return true;
 		
+		Thread[] tr = new Thread[NUMBERTHREAD];
 		for (int i = 0; i < NUMBERTHREAD; i++) {
-			List<JSONObject> subList = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
+			List<BasicDBObject> subList = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
 			
 			JSONArray slJarr = new JSONArray();
 			for(int du = 0; du < subList.size(); du++){
-				slJarr.add((JSONObject) subList.get(du));
+				slJarr.add((BasicDBObject) subList.get(du));
 			}
 			
 			SentimentAnalysis sa = new SentimentAnalysis(host, databaseName, collectionName,
 					slJarr);
 
-			Thread t = new Thread(sa);
-			//Temporário
-			t.start();
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			tr[i] = new Thread(sa);
+			tr[i].start();
+		}
+		
+		boolean isAlive = true;
+		while(isAlive) {
+			Thread.sleep(5000);
+			System.out.println("Sentiment Analysis is alive!");
+			
+			isAlive = false;
+			for(int i = 0; i < NUMBERTHREAD; i++)
+				isAlive = isAlive || tr[i].isAlive();
 		}
 
 		return true;
@@ -160,24 +171,14 @@ public class SentimentAnalysis implements Runnable {
 							.append("offset", ((JSONObject)sentences.get(j)).get("offset")));
 				}
 				
-				
-				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("is_entitysentiment", "true")
+				//Sentimento geral do documento
+				//Magnitude do documento
+				//Sentimento de cada uma das sentenças
+				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("is_sentiment", "true")
 						.append("score_sentiment", sentiment.get("score"))
 						.append("magnitude_sentiment", sentiment.get("magnitude"))
 						.append("sentiments", ltSentences)),
 						new BasicDBObject().append("_id", json.get("_id")));
-				
-				//Sentimento geral do documento
-				/*sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("score_sentiment", sentiment.get("score"))),
-						new BasicDBObject().append("_id", json.get("_id")));
-				
-				//Magnitude do documento
-				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("magnitude_sentiment", sentiment.get("magnitude"))),
-						new BasicDBObject().append("_id", json.get("_id")));
-				
-				//Sentimento de cada uma das sentenças
-				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("sentiments", ltSentences)),
-						new BasicDBObject().append("_id", json.get("_id")));*/
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -26,7 +26,7 @@ import com.google.cloud.language.v1.Document.Type;
 
 public class EntityAnnotation implements Runnable {
 
-	private final int NUMBERTHREAD = 1;
+	private final int NUMBERTHREAD = 4;
 	private JSONArray arr;
 	private String host;
 	private String databaseName;
@@ -131,41 +131,47 @@ public class EntityAnnotation implements Runnable {
 	}
 
 	@SuppressWarnings("unchecked")
-	public boolean analyzeEntitiesText() throws UnknownHostException, ParseException {
+	public boolean analyzeEntitiesText() throws UnknownHostException, ParseException, InterruptedException {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
 
-		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entityannotation", "false"), 10);
+		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entityannotation", "false"), 47);
 
 		int length = jarr.size() / NUMBERTHREAD;
 
 		if (length == 0)
 			return true;
 
+		Thread[] tr = new Thread[NUMBERTHREAD];
 		for (int i = 0; i < NUMBERTHREAD; i++) {
-			List<JSONObject> subList = jarr.subList(length * i, i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
-			
+			List<BasicDBObject> subList = jarr.subList(length * i,
+					i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
+
 			JSONArray slJarr = new JSONArray();
-			for(int du = 0; du < subList.size(); du++){
-				slJarr.add((JSONObject) subList.get(du));
+			for (int du = 0; du < subList.size(); du++) {
+				slJarr.add((BasicDBObject) subList.get(du));
 			}
-			
+
 			EntityAnnotation ea = new EntityAnnotation(host, databaseName, collectionNameSave, collectionNameFind,
 					slJarr);
 
-			Thread t = new Thread(ea);
-			//Temporário
-			t.start();
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			tr[i] = new Thread(ea);
+			tr[i].start();
+		}
+		
+		boolean isAlive = true;
+		while(isAlive) {
+			Thread.sleep(5000);
+			System.out.println("Entity Annotation is alive!");
+			
+			isAlive = false;
+			for(int i = 0; i < NUMBERTHREAD; i++)
+				isAlive = isAlive || tr[i].isAlive();
 		}
 
 		return true;
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation"})
 	@Override
 	public void run() {
 
@@ -183,11 +189,8 @@ public class EntityAnnotation implements Runnable {
 				BasicDBList ltEntities = new BasicDBList();
 
 				JSONArray mentions = (JSONArray) entities.get("entities");
-				for (int j = 0; i < mentions.size(); i++) {
+				for (int j = 0; j < mentions.size(); j++) {
 					JSONObject entity = (JSONObject) mentions.get(j);
-
-					ltEntities.add(new BasicDBObject().append("entity", entity.get("name").toString().toUpperCase())
-							.append("type", entity.get("type")));
 
 					BasicDBObject query = new BasicDBObject();
 					List<BasicDBObject> obj = new ArrayList<BasicDBObject>();
@@ -199,6 +202,8 @@ public class EntityAnnotation implements Runnable {
 
 					// New Entity
 					if (find.size() == 0) {
+						ltEntities.add(new BasicDBObject().append("entity", entity.get("name").toString().toUpperCase())
+								.append("type", entity.get("type")));
 
 						BasicDBObject newEntity = new BasicDBObject();
 						newEntity.append("entity", entity.get("name").toString().toUpperCase());
@@ -245,12 +250,15 @@ public class EntityAnnotation implements Runnable {
 
 						int indexDocument = -1;
 						for (int k = 0; k < ltDocuments.size(); k++)
-							if (((BasicDBObject) ltDocuments.get(k)).get("id_document").toString()
-									.equals(bdbo.get("_id"))) {
+							if (((BasicDBObject) ltDocuments.get(k)).get("id_document").equals(bdbo.get("_id"))) {
 								indexDocument = k;
 								break;
 							}
 
+						if(indexDocument == -1)
+							ltEntities.add(new BasicDBObject().append("entity", entity.get("name").toString().toUpperCase())
+									.append("type", entity.get("type")));
+						
 						JSONArray docMentions = (JSONArray) entity.get("mentions");
 						BasicDBList ltMentions = indexDocument == -1 ? new BasicDBList()
 								: (BasicDBList) ((BasicDBObject) ltDocuments.get(indexDocument)).get("mentions");
@@ -261,7 +269,18 @@ public class EntityAnnotation implements Runnable {
 								: ((BasicDBObject) ltDocuments.get(indexDocument)).getInt("number_coref_mentions");
 
 						for (int k = 0; k < docMentions.size(); k++) {
-							String typeMention = ((JSONObject) docMentions.get(i)).get("type").toString();
+							String typeMention = ((JSONObject) docMentions.get(k)).get("type").toString();
+							int offset = Integer.parseInt(((JSONObject) docMentions.get(k)).get("offset").toString());
+							boolean cont = false;
+							
+							for(int pn = 0; pn < ltMentions.size(); pn++)
+								if(((BasicDBObject)ltMentions.get(pn)).getInt("offset") == offset) {
+									cont = true;
+									break;
+								}
+							
+							if(cont)
+								continue;
 
 							if (typeMention.equals("PROPER"))
 								numberDirectMentions++;
@@ -269,9 +288,7 @@ public class EntityAnnotation implements Runnable {
 								numberCorefMentions++;
 
 							ltMentions.add(new BasicDBObject()
-									.append("offset",
-											Integer.parseInt(
-													((JSONObject) docMentions.get(k)).get("offset").toString()))
+									.append("offset", offset)
 									.append("content", ((JSONObject) docMentions.get(k)).get("content").toString())
 									.append("type", typeMention));
 						}
@@ -283,15 +300,10 @@ public class EntityAnnotation implements Runnable {
 									.append("number_coref_mentions", numberCorefMentions)
 									.append("mentions", ltMentions));
 						} else {
-							((BasicDBObject) ltDocuments.get(indexDocument)).remove("number_direct_mentions");
-							((BasicDBObject) ltDocuments.get(indexDocument)).remove("number_coref_mentions");
-							((BasicDBObject) ltDocuments.get(indexDocument)).remove("mentions");
+							((BasicDBObject) ltDocuments.get(indexDocument)).replace("number_direct_mentions", numberDirectMentions);
+							((BasicDBObject) ltDocuments.get(indexDocument)).replace("number_coref_mentions", numberCorefMentions);
+							((BasicDBObject) ltDocuments.get(indexDocument)).replace("mentions", ltMentions);
 
-							((BasicDBObject) ltDocuments.get(indexDocument)).append("number_direct_mentions",
-									numberDirectMentions);
-							((BasicDBObject) ltDocuments.get(indexDocument)).append("number_coref_mentions",
-									numberCorefMentions);
-							((BasicDBObject) ltDocuments.get(indexDocument)).append("mentions", ltMentions);
 						}
 
 						if ((!oldEntity.containsKey("url_source") || oldEntity.get("url_source").equals(""))
@@ -312,14 +324,12 @@ public class EntityAnnotation implements Runnable {
 						new BasicDBObject().append("$set",
 								new BasicDBObject().append("is_entityannotation", "true").append("entities",
 										ltEntities)),
-						new BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id")));
+						new BasicDBObject().append("_id", bdbo.get("_id")));
 
 				/*
-				 * sd.updateDocument(collectionNameFind, new
-				 * BasicDBObject().append("$set", new
+				 * sd.updateDocument(collectionNameFind, new BasicDBObject().append("$set", new
 				 * BasicDBObject().append("entities", ltEntities)), new
-				 * BasicDBObject().append("_id", ((JSONObject)
-				 * arr.get(i)).get("_id")));
+				 * BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id")));
 				 */
 			}
 

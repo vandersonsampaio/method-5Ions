@@ -57,12 +57,12 @@ public class FiveIons {
 
 		try {
 			// Anota as entidades
+			if(false) {
 			entityAnnotation.analyzeEntitiesText();
-
-			System.exit(1);
 
 			// Anota os sentimentos
 			sentimentAnalysis.analyzeSentimentText();
+			}
 
 			// Anota os sentimentos das entidades
 			sentimentEntityAnnotation.entitySentimentText();
