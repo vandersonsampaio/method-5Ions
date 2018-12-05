@@ -59,12 +59,15 @@ public class FiveIons {
 
 		try {
 			// Anota as entidades
+			System.out.println("Entity Annotation");
 			entityAnnotation.analyzeEntitiesText();
 
 			// Anota os sentimentos
+			System.out.println("Sentiment Analysis");
 			sentimentAnalysis.analyzeSentimentText();
 
 			// Anota os sentimentos das entidades
+			System.out.println("Entity Sentiment Analysis");
 			sentimentEntityAnnotation.entitySentimentText();
 			
 			// processo deverá ser integrado a análise de sentimentos
@@ -81,8 +84,10 @@ public class FiveIons {
 			// if (calculationMetrics)
 			// summarizationMetric("25/12/2016", "25/09/2017");
 			// serialTime.summarizationMetric();
+			System.out.println("SerialTime");
 			serialTime.generationSerialTime();
 		
+			System.out.println("Calculate Metric");
 			calculateMeasure.summarizationMetric();
 
 		} catch (UnknownHostException | ParseException | java.text.ParseException | ClassNotFoundException

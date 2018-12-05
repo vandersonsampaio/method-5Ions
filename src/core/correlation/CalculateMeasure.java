@@ -50,7 +50,7 @@ public class CalculateMeasure implements Runnable {
 		obj.add(new BasicDBObject("is_calculatemeasure", "false"));
 		query.put("$and", obj);
 
-		JSONArray jarrEntities = ld.findByQuery(query, 1000);
+		JSONArray jarrEntities = ld.findByQuery(query, 500);
 System.out.println("Consultou");
 		int length = jarrEntities.size() / NUMBERTHREAD;
 
@@ -164,8 +164,79 @@ System.out.println("Consultou");
 		try {
 			for (int i = 0; i < arr.size(); i++) {
 
-				splitDay((BasicDBObject) arr.get(i));
+				//splitDay((BasicDBObject) arr.get(i));
+				BasicDBObject entity = (BasicDBObject) arr.get(i);
+				SaveDocuments sd = new SaveDocuments(host, databaseName, collection);
+				// serialTimeShort
+				// SerialTimeAcum
+				if (!entity.containsKey("serial_time_short") || entity.get("serial_time_short") == null) {
+					sd.updateDocument(
+							new BasicDBObject().append("$set", new BasicDBObject().append("is_calculatemeasure", "maybe")),
+							new BasicDBObject().append("_id", entity.get("_id")));
+					return;
+				}
 
+				Class<?> metricClass = Class.forName("core.summarizationmetric.Metric");
+
+				Object metricObject = metricClass.newInstance();
+				Method calculateMethod = metricClass.getMethod("calculatedMetric", double.class, double.class);
+
+				BasicDBList ltCalculeShort = new BasicDBList();
+				BasicDBList stShort = ((BasicDBList) entity.get("serial_time_short"));
+				for (int du = 0; du < stShort.size(); du++) {
+					// sumarize_metric: {metric: , name: '', description: '', [{date: '',
+					// value_direct: '', value_coref: '', value_total: ''}]}
+
+					Double value_direct = null;
+					Double value_coref = null;
+					Double value_total = null;
+					BasicDBObject sentiment = (BasicDBObject) ((BasicDBObject) stShort.get(du)).get("sentiments");
+
+					if (sentiment != null) {
+						value_direct = (Double) calculateMethod.invoke(metricObject, sentiment.getDouble("score_direct_pos"),
+								sentiment.getDouble("score_direct_neg"));
+						value_coref = (Double) calculateMethod.invoke(metricObject, sentiment.getDouble("score_coref_pos"),
+								sentiment.getDouble("score_coref_neg"));
+						value_total = (Double) calculateMethod.invoke(metricObject,
+								sentiment.getDouble("score_direct_pos") + sentiment.getDouble("score_coref_pos"),
+								sentiment.getDouble("score_direct_neg") + sentiment.getDouble("score_coref_neg"));
+					}
+
+					ltCalculeShort.add(new BasicDBObject().append("date", ((BasicDBObject) stShort.get(du)).getDate("date"))
+							.append("value_direct", value_direct).append("value_coref", value_coref)
+							.append("value_total", value_total));
+				}
+				
+				BasicDBList ltCalculeAcum = new BasicDBList();
+				BasicDBList stAcum = ((BasicDBList) entity.get("serial_time_acum"));
+				for (int du = 0; du < stAcum.size(); du++) {
+					
+					Double value_direct = null;
+					Double value_coref = null;
+					Double value_total = null;
+					BasicDBObject sentiment = (BasicDBObject) ((BasicDBObject) stAcum.get(du)).get("sentiments");
+
+					if (sentiment != null) {
+						value_direct = (Double) calculateMethod.invoke(metricObject, sentiment.getDouble("score_direct_pos"),
+								sentiment.getDouble("score_direct_neg"));
+						value_coref = (Double) calculateMethod.invoke(metricObject, sentiment.getDouble("score_coref_pos"),
+								sentiment.getDouble("score_coref_neg"));
+						value_total = (Double) calculateMethod.invoke(metricObject,
+								sentiment.getDouble("score_direct_pos") + sentiment.getDouble("score_coref_pos"),
+								sentiment.getDouble("score_direct_neg") + sentiment.getDouble("score_coref_neg"));
+					}
+
+					ltCalculeAcum.add(new BasicDBObject().append("date", ((BasicDBObject) stAcum.get(du)).getDate("date"))
+							.append("value_direct", value_direct).append("value_coref", value_coref)
+							.append("value_total", value_total));
+				}
+
+				sd.updateDocument(
+						new BasicDBObject().append("$set", new BasicDBObject().append("is_calculatemeasure", "true")
+								.append("metric", new BasicDBObject().append("name", "f2").append("description", "division pos plus neg and neg")
+								.append("values_short", ltCalculeShort).append("values_acum", ltCalculeAcum))),
+						new BasicDBObject().append("_id", entity.get("_id")));
+				
 				// splitMonth((BasicDBObject) jarrEntities.get(i));
 				// splitWeek((BasicDBObject) jarrEntities.get(i));
 				// Consulta a collection PERIOD no banco de dados e realiza calculo
