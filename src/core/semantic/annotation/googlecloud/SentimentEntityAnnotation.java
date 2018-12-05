@@ -24,7 +24,7 @@ import com.google.cloud.language.v1.LanguageServiceClient;
 
 public class SentimentEntityAnnotation implements Runnable {
 
-	private final int NUMBERTHREAD = 1;
+	private final int NUMBERTHREAD = 6;
 	private JSONArray arr;
 	private String host;
 	private String databaseName;
@@ -75,13 +75,11 @@ public class SentimentEntityAnnotation implements Runnable {
 					objEntity.put("type", entity.getType().toString());
 					objEntity.put("name", entity.getName());
 					/*
-					 * if(entity.getMetadataCount() == 0) {
-					 * objEntity.put("name", entity.getName()); } else {
-					 * if(entity.getMetadataMap().get("wikipedia_url") != null){
-					 * String[] parts =
-					 * entity.getMetadataMap().get("wikipedia_url").toString().
-					 * split("/"); objEntity.put("name", parts[parts.length-1]);
-					 * }else{ objEntity.put("name", entity.getName()); } }
+					 * if(entity.getMetadataCount() == 0) { objEntity.put("name", entity.getName());
+					 * } else { if(entity.getMetadataMap().get("wikipedia_url") != null){ String[]
+					 * parts = entity.getMetadataMap().get("wikipedia_url").toString(). split("/");
+					 * objEntity.put("name", parts[parts.length-1]); }else{ objEntity.put("name",
+					 * entity.getName()); } }
 					 */
 
 					objEntity.put("salience", entity.getSalience());
@@ -153,7 +151,7 @@ public class SentimentEntityAnnotation implements Runnable {
 	}
 
 	@SuppressWarnings("unchecked")
-	public boolean entitySentimentText() throws UnknownHostException {
+	public boolean entitySentimentText() throws UnknownHostException, InterruptedException {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
 
 		BasicDBObject query = new BasicDBObject();
@@ -162,14 +160,15 @@ public class SentimentEntityAnnotation implements Runnable {
 		obj.add(new BasicDBObject("is_sentiment", "true"));
 		obj.add(new BasicDBObject("is_entityannotation", "true"));
 		query.put("$and", obj);
-		
-		JSONArray jarr = ld.findByQuery(query, 1);
+
+		JSONArray jarr = ld.findByQuery(query, 1000);
 
 		int length = jarr.size() / NUMBERTHREAD;
 
 		if (length == 0)
 			return true;
 
+		Thread[] tr = new Thread[NUMBERTHREAD];
 		for (int i = 0; i < NUMBERTHREAD; i++) {
 			List<BasicDBObject> subList = jarr.subList(length * i,
 					i + 1 < NUMBERTHREAD ? length * (i + 1) : jarr.size());
@@ -182,14 +181,18 @@ public class SentimentEntityAnnotation implements Runnable {
 			SentimentEntityAnnotation sea = new SentimentEntityAnnotation(host, databaseName, collectionNameSave,
 					collectionNameFind, slJarr);
 
-			Thread t = new Thread(sea);
-			// Temporário
-			t.start();
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			tr[i] = new Thread(sea);
+			tr[i].start();
+		}
+
+		boolean isAlive = true;
+		while (isAlive) {
+			Thread.sleep(5000);
+			System.out.println("Entity Sentiment is alive!");
+
+			isAlive = false;
+			for (int i = 0; i < NUMBERTHREAD; i++)
+				isAlive = isAlive || tr[i].isAlive();
 		}
 
 		return true;
@@ -197,103 +200,40 @@ public class SentimentEntityAnnotation implements Runnable {
 
 	@Override
 	public void run() {
-		try {
-			// Salvar e carregar as menções
-			SaveDocuments sd = new SaveDocuments(host, databaseName, collectionNameSave);
-			LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameSave);
+		Object docId = null;
+		SaveDocuments sd = null;
+		int indexReturn = 0;
+		while (true) {
+			try {
+				// Salvar e carregar as menções
+				sd = new SaveDocuments(host, databaseName, collectionNameSave);
+				LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameSave);
 
-			// arr são documentos
-			for (int i = 0; i < arr.size(); i++) {
-				BasicDBObject doc = (BasicDBObject) arr.get(i);
-				if (doc.getString("language").equals("en")) {
-					// Pego as entidades contidas nesse documento (entities)
-					JSONObject mentions = this.entitySentimentText(doc.getString("content"),
-							doc.getString("title"), doc.getString("date"));
-					JSONArray mentionsArr = (JSONArray) mentions.get("entities");
+				// arr são documentos
+				for (int i = indexReturn; i < arr.size(); i++) {
+					BasicDBObject doc = (BasicDBObject) arr.get(i);
+					if (doc.getString("language").equals("en")) {
+						// Pego as entidades contidas nesse documento (entities)
+						JSONObject mentions = this.entitySentimentText(doc.getString("content"), doc.getString("title"),
+								doc.getString("date"));
+						JSONArray mentionsArr = (JSONArray) mentions.get("entities");
 
+						for (Object mention : mentionsArr) {
+							double score_direct_sentiment_pos = 0;
+							double score_direct_sentiment_neg = 0;
+							double score_coref_sentiment_pos = 0;
+							double score_coref_sentiment_neg = 0;
 
-					for (Object mention : mentionsArr) {
-						double score_direct_sentiment_pos = 0;
-						double score_direct_sentiment_neg = 0;
-						double score_coref_sentiment_pos = 0;
-						double score_coref_sentiment_neg = 0;
+							// buscar em ld a entity correspondente
+							JSONArray mentionsCollection = ld.findByQuery(
+									new BasicDBObject().append("entity", ((JSONObject) mention).get("name").toString())
+											.append("type", ((JSONObject) mention).get("type").toString()));
 
-						// buscar em ld a entity correspondente
-						JSONArray mentionsCollection = ld.findByQuery(
-								new BasicDBObject().append("entity", ((JSONObject) mention).get("name").toString())
-										.append("type", ((JSONObject) mention).get("type").toString()));
-
-						// pegar em mentionscollection o document correspondente
-						BasicDBList documents = (BasicDBList) ((BasicDBObject) mentionsCollection.get(0)).get("documents");
-						int indexDocument = -1;
-
-						for (int k = 0; k < documents.size(); k++) {
-							if (((BasicDBObject) documents.get(k)).get("id_document").equals(doc.get("id"))) {
-								indexDocument = k;
-								break;
-							}
-						}
-
-						JSONArray mentionArr = (JSONArray) ((JSONObject) mention).get("mentions");
-
-						// contabilizar o score_direct_sentiment e o
-						// score_coref_sentiment
-						for (int k = 0; k < mentionArr.size(); k++) {
-							double value = (double) ((JSONObject) mentionArr.get(k)).get("score");
-							if (((JSONObject) mentionArr.get(k)).get("type").toString().equals("PROPER"))
-								if (value >= 0)
-									score_direct_sentiment_pos += value;
-								else
-									score_direct_sentiment_neg += (value * -1);
-							else if (value >= 0)
-								score_coref_sentiment_pos += value;
-							else
-								score_coref_sentiment_neg += (value * -1);
-						}
-
-						((BasicDBObject) documents.get(indexDocument)).put("sentiments",
-								new BasicDBObject().append("score_direct_pos", score_direct_sentiment_pos)
-										.append("score_direct_neg", score_direct_sentiment_neg)
-										.append("score_coref_pos", score_coref_sentiment_pos)
-										.append("score_coref_neg", score_coref_sentiment_neg));
-
-						// Atualizar o documents do mentionsCollection
-						// adicionando o atributo sentiment
-						// com dois atributos (score_direct e score_coref)
-						sd.updateDocument(
-								new BasicDBObject().append("$set", new BasicDBObject().append("documents", documents)),
-								new BasicDBObject().append("entity", ((JSONObject) mention).get("entity").toString().toUpperCase())
-										.append("type", ((JSONObject) mention).get("type").toString()));
-					}
-
-				} else {
-					BasicDBList entities = (BasicDBList) doc.get("entities");
-					BasicDBList sentiments = (BasicDBList) doc.get("sentiments");
-
-					for (int j = 0; j < entities.size(); j++) {
-						double mag_direct_sentiment_pos = 0;
-						double mag_direct_sentiment_neg = 0;
-						double mag_coref_sentiment_pos = 0;
-						double mag_coref_sentiment_neg = 0;
-						double score_direct_sentiment_pos = 0;
-						double score_direct_sentiment_neg = 0;
-						double score_coref_sentiment_pos = 0;
-						double score_coref_sentiment_neg = 0;
-
-						// Consultar a entidade em mentions (entities possui
-						// atributos entity e type)
-						BasicDBObject entity = (BasicDBObject) entities.get(i);
-						JSONArray mentionsCollection = ld.findByQuery(new BasicDBObject()
-								.append("entity", entity.getString("entity")).append("type", entity.getString("type")));
-
-						if (mentionsCollection.size() > 0) {
-							// pegar o atributo documents do retorno da linha anterior
+							// pegar em mentionscollection o document correspondente
 							BasicDBList documents = (BasicDBList) ((BasicDBObject) mentionsCollection.get(0))
 									.get("documents");
 							int indexDocument = -1;
 
-							// pesquisar o documento que possui o mesmo
-							// id_documento da variável doc
 							for (int k = 0; k < documents.size(); k++) {
 								if (((BasicDBObject) documents.get(k)).get("id_document").equals(doc.get("id"))) {
 									indexDocument = k;
@@ -301,51 +241,28 @@ public class SentimentEntityAnnotation implements Runnable {
 								}
 							}
 
-							// pegar o atributo metions da linha anteior
-							for (Object mention : (BasicDBList) ((BasicDBObject) documents.get(indexDocument))
-									.get("mentions")) {
-								int offset = (int) ((BasicDBObject) mention).get("offset");
-								String type = ((BasicDBObject) mention).get("type").toString();
-								double score = 0;
-								double magnitude = 0;
+							JSONArray mentionArr = (JSONArray) ((JSONObject) mention).get("mentions");
 
-								for (int k = 0; k < sentiments.size(); k++) {
-									if ((k + 1 == sentiments.size()) || (((BasicDBObject) sentiments.get(k))
-											.getInt("offset") <= offset
-											&& ((BasicDBObject) sentiments.get(k + 1)).getInt("offset") >= offset)){
-										score = ((BasicDBObject) sentiments.get(k)).getDouble("score");
-										magnitude = ((BasicDBObject) sentiments.get(k)).getDouble("magnitude");
-									}
-
-								}
-
-								if (type.equals("PROPER"))
-									if (score >= 0){
-										score_direct_sentiment_pos += (score * magnitude);
-										mag_direct_sentiment_pos += magnitude;
-									} else {
-										score_direct_sentiment_neg += (score * magnitude * -1);
-										mag_direct_sentiment_neg += magnitude;
-									} 
-								else if (score >= 0) {
-									score_coref_sentiment_pos += (score * magnitude);
-									mag_direct_sentiment_pos += magnitude;
-								} else {
-									score_coref_sentiment_neg += (score * magnitude * -1);
-									mag_coref_sentiment_neg += magnitude;
-								}
+							// contabilizar o score_direct_sentiment e o
+							// score_coref_sentiment
+							for (int k = 0; k < mentionArr.size(); k++) {
+								double value = (double) ((JSONObject) mentionArr.get(k)).get("score");
+								if (((JSONObject) mentionArr.get(k)).get("type").toString().equals("PROPER"))
+									if (value >= 0)
+										score_direct_sentiment_pos += value;
+									else
+										score_direct_sentiment_neg += (value * -1);
+								else if (value >= 0)
+									score_coref_sentiment_pos += value;
+								else
+									score_coref_sentiment_neg += (value * -1);
 							}
 
-							mag_direct_sentiment_pos = mag_direct_sentiment_pos == 0 ? 1 : mag_direct_sentiment_pos;
-							mag_direct_sentiment_neg = mag_direct_sentiment_neg == 0 ? 1 : mag_direct_sentiment_neg;
-							mag_coref_sentiment_pos = mag_coref_sentiment_pos == 0 ? 1 : mag_coref_sentiment_pos;
-							mag_coref_sentiment_neg = mag_coref_sentiment_neg == 0 ? 1 : mag_coref_sentiment_neg;
-							
 							((BasicDBObject) documents.get(indexDocument)).put("sentiments",
-									new BasicDBObject().append("score_direct_pos", (score_direct_sentiment_pos / mag_direct_sentiment_pos))
-											.append("score_direct_neg", (score_direct_sentiment_neg / mag_direct_sentiment_neg))
-											.append("score_coref_pos", (score_coref_sentiment_pos / mag_direct_sentiment_pos))
-											.append("score_coref_neg", (score_coref_sentiment_neg / mag_coref_sentiment_neg)));
+									new BasicDBObject().append("score_direct_pos", score_direct_sentiment_pos)
+											.append("score_direct_neg", score_direct_sentiment_neg)
+											.append("score_coref_pos", score_coref_sentiment_pos)
+											.append("score_coref_neg", score_coref_sentiment_neg));
 
 							// Atualizar o documents do mentionsCollection
 							// adicionando o atributo sentiment
@@ -353,20 +270,143 @@ public class SentimentEntityAnnotation implements Runnable {
 							sd.updateDocument(
 									new BasicDBObject().append("$set",
 											new BasicDBObject().append("documents", documents)),
-									new BasicDBObject().append("entity", entity.getString("entity")).append("type",
-											entity.getString("type")));
+									new BasicDBObject()
+											.append("entity",
+													((JSONObject) mention).get("entity").toString().toUpperCase())
+											.append("type", ((JSONObject) mention).get("type").toString()));
+						}
+
+					} else {
+						BasicDBList entities = (BasicDBList) doc.get("entities");
+						BasicDBList sentiments = (BasicDBList) doc.get("sentiments");
+
+						for (int j = 0; j < entities.size(); j++) {
+							double mag_direct_sentiment_pos = 0;
+							double mag_direct_sentiment_neg = 0;
+							double mag_coref_sentiment_pos = 0;
+							double mag_coref_sentiment_neg = 0;
+							double score_direct_sentiment_pos = 0;
+							double score_direct_sentiment_neg = 0;
+							double score_coref_sentiment_pos = 0;
+							double score_coref_sentiment_neg = 0;
+
+							// Consultar a entidade em mentions (entities possui
+							// atributos entity e type)
+							BasicDBObject entity = (BasicDBObject) entities.get(j);
+
+							BasicDBObject query = new BasicDBObject();
+							List<BasicDBObject> obj = new ArrayList<BasicDBObject>();
+							obj.add(new BasicDBObject("entity", entity.getString("entity")));
+							obj.add(new BasicDBObject("type", entity.getString("type")));
+							query.put("$and", obj);
+
+							JSONArray mentionsCollection = ld.findByQuery(query);
+
+							if (mentionsCollection.size() > 0) {
+								// pegar o atributo documents do retorno da linha anterior
+								BasicDBList documents = (BasicDBList) ((BasicDBObject) mentionsCollection.get(0))
+										.get("documents");
+								int indexDocument = -1;
+
+								// pesquisar o documento que possui o mesmo
+								// id_documento da variável doc
+								for (int k = 0; k < documents.size(); k++) {
+									if (((BasicDBObject) documents.get(k)).get("id_document").equals(doc.get("_id"))) {
+										indexDocument = k;
+										break;
+									}
+								}
+
+								docId = doc.get("_id");
+								indexReturn = i + 1;
+
+								// pegar o atributo metions da linha anteior
+								for (Object mention : (BasicDBList) ((BasicDBObject) documents.get(indexDocument))
+										.get("mentions")) {
+									int offset = (int) ((BasicDBObject) mention).get("offset");
+									String type = ((BasicDBObject) mention).get("type").toString();
+									double score = 0;
+									double magnitude = 0;
+
+									for (int k = 0; k < sentiments.size(); k++) {
+										if ((k + 1 == sentiments.size())
+												|| (((BasicDBObject) sentiments.get(k)).getInt("offset") <= offset
+														&& ((BasicDBObject) sentiments.get(k + 1))
+																.getInt("offset") >= offset)) {
+											score = ((BasicDBObject) sentiments.get(k)).getDouble("score");
+											magnitude = ((BasicDBObject) sentiments.get(k)).getDouble("magnitude");
+											break;
+										}
+
+									}
+
+									if (type.equals("PROPER"))
+										if (score >= 0) {
+											score_direct_sentiment_pos += (score * magnitude);
+											mag_direct_sentiment_pos += magnitude;
+										} else {
+											score_direct_sentiment_neg += (score * magnitude * -1);
+											mag_direct_sentiment_neg += magnitude;
+										}
+									else if (score >= 0) {
+										score_coref_sentiment_pos += (score * magnitude);
+										mag_direct_sentiment_pos += magnitude;
+									} else {
+										score_coref_sentiment_neg += (score * magnitude * -1);
+										mag_coref_sentiment_neg += magnitude;
+									}
+								}
+
+								mag_direct_sentiment_pos = mag_direct_sentiment_pos == 0 ? 1 : mag_direct_sentiment_pos;
+								mag_direct_sentiment_neg = mag_direct_sentiment_neg == 0 ? 1 : mag_direct_sentiment_neg;
+								mag_coref_sentiment_pos = mag_coref_sentiment_pos == 0 ? 1 : mag_coref_sentiment_pos;
+								mag_coref_sentiment_neg = mag_coref_sentiment_neg == 0 ? 1 : mag_coref_sentiment_neg;
+
+								((BasicDBObject) documents
+										.get(indexDocument))
+												.put("sentiments",
+														new BasicDBObject()
+																.append("score_direct_pos",
+																		(score_direct_sentiment_pos
+																				/ mag_direct_sentiment_pos))
+																.append("score_direct_neg",
+																		(score_direct_sentiment_neg
+																				/ mag_direct_sentiment_neg))
+																.append("score_coref_pos",
+																		(score_coref_sentiment_pos
+																				/ mag_direct_sentiment_pos))
+																.append("score_coref_neg", (score_coref_sentiment_neg
+																		/ mag_coref_sentiment_neg)));
+
+								// Atualizar o documents do mentionsCollection
+								// adicionando o atributo sentiment
+								// com dois atributos (score_direct e score_coref)
+								sd.updateDocument(
+										new BasicDBObject().append("$set",
+												new BasicDBObject().append("documents", documents)),
+										new BasicDBObject().append("_id",
+												((BasicDBObject) mentionsCollection.get(0)).get("_id")));
+							}
 						}
 					}
+
+					// Atualizar o document
+					sd.updateDocument(collectionNameFind,
+							new BasicDBObject().append("$set",
+									new BasicDBObject().append("is_entitysentiment", "true")),
+							new BasicDBObject().append("_id", doc.get("_id")));
 				}
 
-				// Atualizar o document
+			} catch (Exception e) {
 				sd.updateDocument(collectionNameFind,
-						new BasicDBObject().append("$set", new BasicDBObject().append("is_entitysentiment", "true")),
-						new BasicDBObject().append("_id", doc.get("_id")));
+						new BasicDBObject().append("$set", new BasicDBObject().append("is_entitysentiment", "maybe")),
+						new BasicDBObject().append("_id", docId));
+				System.out.println(docId);
+				e.printStackTrace();
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
+			
+			if(indexReturn >= arr.size())
+				break;
 		}
 	}
 }

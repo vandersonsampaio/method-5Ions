@@ -31,7 +31,9 @@ public class Metric implements IMetric {
 	}
 
 	@Override
-	public double calculatedMetric(double positive, double negative) {
-		return positive / negative;
+	public Double calculatedMetric(double positive, double negative) {
+		if(negative == 0)
+			return null;
+		return (positive + negative) / negative;
 	}
 }

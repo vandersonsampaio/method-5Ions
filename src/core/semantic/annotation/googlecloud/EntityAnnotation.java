@@ -134,7 +134,7 @@ public class EntityAnnotation implements Runnable {
 	public boolean analyzeEntitiesText() throws UnknownHostException, ParseException, InterruptedException {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
 
-		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entityannotation", "false"), 47);
+		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_entityannotation", "false"), 1);
 
 		int length = jarr.size() / NUMBERTHREAD;
 

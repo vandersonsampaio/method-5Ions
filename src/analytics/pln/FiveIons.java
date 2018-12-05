@@ -12,6 +12,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
+import core.correlation.CalculateMeasure;
 import core.correlation.SerialTime;
 import core.entity.EntitySentiment;
 import core.entity.SumarySentiment;
@@ -38,6 +39,7 @@ public class FiveIons {
 			DATABASENAME, "mentions", "documents");
 	private static Load load = new Load();
 	private static SerialTime serialTime = new SerialTime(HOST, DATABASENAME, "mentions");
+	private static CalculateMeasure calculateMeasure = new CalculateMeasure(HOST, DATABASENAME, "mentions");
 	private static SumyPython sumy = new SumyPython();
 	private static AdapterWeka prediction = new AdapterWeka();
 
@@ -57,17 +59,14 @@ public class FiveIons {
 
 		try {
 			// Anota as entidades
-			if(false) {
 			entityAnnotation.analyzeEntitiesText();
 
 			// Anota os sentimentos
 			sentimentAnalysis.analyzeSentimentText();
-			}
 
 			// Anota os sentimentos das entidades
 			sentimentEntityAnnotation.entitySentimentText();
-
-			System.exit(0);
+			
 			// processo deverá ser integrado a análise de sentimentos
 			// Carrega o sentimento das entidades para gerar as 7-uplas
 			// if (genneration7uplas)
@@ -83,7 +82,8 @@ public class FiveIons {
 			// summarizationMetric("25/12/2016", "25/09/2017");
 			// serialTime.summarizationMetric();
 			serialTime.generationSerialTime();
-			serialTime.summarizationMetric();
+		
+			calculateMeasure.summarizationMetric();
 
 		} catch (UnknownHostException | ParseException | java.text.ParseException | ClassNotFoundException
 				| InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
@@ -98,8 +98,8 @@ public class FiveIons {
 
 		// Adicionar contribuição
 		// rever isso tudo. Ajuste de pesos será interno a saída.
-		if (true)
-			compositeMetric();
+		//if (false)
+		//	compositeMetric();
 
 		// Gera arquivo ARFF do Weka para correlação
 		if (prediction)
