@@ -5,11 +5,17 @@ import java.util.Map;
 import java.util.Random;
 
 public class Population {
-	public static int length = 5000;
+	private int length;
 	Map<Integer,Weights> population;
 	Map<Integer,Weights> sons;
 	HashMap<Integer, Double> prob;
     public static Double mutRate = 0.01;
+    private Engine engine;
+    
+    public Population(Engine engine, int length){
+    	this.engine = engine;
+    	this.length = length;
+    }
     
     public void setSons(Map<Integer, Weights> sons){
     	this.sons = sons;
@@ -23,10 +29,14 @@ public class Population {
     	this.population = population;
     }
     
-    public void iniciaPopulacao() {
+    public int getLength(){
+    	return length;
+    }
+    
+    public void startPopulation() {
     	population = new HashMap<Integer,Weights>();
 		 for (int i = 0 ; i < length ; i++ )
-			 population.put(i, Engine.randomWeight());
+			 population.put(i, engine.randomWeight());
 	}
     
     public void probs() {
@@ -35,11 +45,11 @@ public class Population {
 		double range = 0;
 		
 		for (int i = 0 ; i < length ; i++ ){
-			criteriaTotal += (population.get(i).getCriteria() > Engine.criteria ? Engine.criteria : population.get(i).getCriteria());
+			criteriaTotal += (population.get(i).getCriteria() > engine.getCriteria() ? engine.getCriteria() : population.get(i).getCriteria());
 		}
 		
 		for (int i = 0; i < length; i++) {
-			Double aux = (population.get(i).getCriteria() > Engine.criteria ? Engine.criteria : population.get(i).getCriteria()) / criteriaTotal;
+			Double aux = (population.get(i).getCriteria() > engine.getCriteria() ? engine.getCriteria() : population.get(i).getCriteria()) / criteriaTotal;
 			prob.put(i, aux+range);
 			range += aux;
 		}
@@ -99,7 +109,7 @@ public class Population {
     	double[] ret = new double[3];
     	double maxCriteria = 0;
 		for (int i = 0; i < length; i++) {
-			if (population.get(i).getCriteria() >= Engine.criteria) {
+			if (population.get(i).getCriteria() >= engine.getCriteria()) {
 				System.out.println("Solução nº " + i + " da geração " + geracao);
 				System.out.println("Pesos: " + population.get(i).getWeights().toString());				
 			}

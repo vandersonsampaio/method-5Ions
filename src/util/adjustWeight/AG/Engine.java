@@ -3,9 +3,13 @@ package util.adjustWeight.AG;
 import java.util.Random;
 
 public class Engine {
-	public static double criteria = 6;
+	public double criteria = 6;
 	
-	public static Weights randomWeight() {
+	public Engine(double criteria){
+		this.criteria = criteria;
+	}
+	
+	public Weights randomWeight() {
 		Weights ret = new Weights();
 		
 		Weight[] wei = new Weight[3];
@@ -23,10 +27,14 @@ public class Engine {
 	}
 	
 	public boolean notDone(Population p) {
-		for (int i = 0; i < Population.length; i++)
+		for (int i = 0; i < p.getLength(); i++)
 			if (p.population.get(i).getCriteria() >= criteria) 
 				return false;
 		
 		return true;
+	}
+	
+	public double getCriteria(){
+		return criteria;
 	}
 }

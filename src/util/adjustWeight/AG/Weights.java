@@ -13,8 +13,8 @@ public class Weights {
 	private Weight[] weights;
 	private double criteria;
 	
-	public Weights(){
-		this.weights = new Weight[3];
+	public Weights(int numberWeight){
+		this.weights = new Weight[numberWeight];
 		this.criteria = 0;
 	}
 	
@@ -71,7 +71,21 @@ public class Weights {
 	
 	@Override
 	public String toString(){
-		return "{" + weights[0].getValue() + "; " + weights[1].getValue() + "; " + weights[2].getValue() + "} - Critério: " + criteria;
+		StringBuilder str = new StringBuilder();
+		str.append("{ ");
+		
+		for(int i = 0; i < weights.length; i++){
+			str.append(weights[i].getValue());
+			
+			if(i + 1 == weights.length)
+				str.append(" } - Critério: ");
+			else
+				str.append("; ");
+		}
+		str.append(criteria);
+		
+		//return "{" + weights[0].getValue() + "; " + weights[1].getValue() + "; " + weights[2].getValue() + "} - Critério: " + criteria;
+		return str.toString();
 	}
 }
 
@@ -135,8 +149,5 @@ class Weight {
 		cromossomo[6] = Integer.parseInt(sPartDecimal.charAt(5) + "");
 		cromossomo[7] = Integer.parseInt(sPartDecimal.charAt(6) + "");
 		cromossomo[8] = value > 0 ? 1 : -1;
-		
-		//System.out.println(cromossomo[0] + "" +  cromossomo[1] + "" + cromossomo[2] + "," + cromossomo[3] + "" + cromossomo[4] + "" + 
-		//		cromossomo[5] + "" + cromossomo[6] + "" + cromossomo[7]);
 	}
 }
