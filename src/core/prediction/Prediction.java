@@ -1,51 +1,38 @@
-package core.correlation;
+package core.prediction;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 
-import core.entity.ExternalData;
+import core.correlation.CalculateWeight;
 import io.db.LoadDocuments;
-import io.file.Load;
-import util.adjustWeight.AG.Engine;
 import util.commom.Dates;
-import util.commom.Properties;
+import weka.core.Instances;
 
-public class Correlation {
-
+public class Prediction {
 	private String host;
 	private String databaseName;
 	private String collection;
 	private String collectionExternalFile;
-
-	public Correlation() {
-		// this.coPearson = new double[6];
-	}
-
-	public Correlation(String host, String databaseName, String collection, String collectionExternalFile) {
+	
+	public Prediction(String host, String databaseName, String collection, String collectionExternalFile) {
 		this.host = host;
 		this.databaseName = databaseName;
 		this.collection = collection;
 		this.collectionExternalFile = collectionExternalFile;
 	}
-
-	public void calculeCorrelation(String nameTarget, String nameExternalIndicator, int generations, double criteria) throws Exception {
+	
+	public void calculePrediction(String nameTarget, String nameExternalIndicator, int generations, double criteria) throws Exception {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionExternalFile);
 		
 		BasicDBObject fields = new BasicDBObject("_id", "1").append("entity", "1").append("type", "1").append("metric", "1");
 
-		// Definir as entidades para análise
+		// Entidades para análise
 		BasicDBObject externalTarget = ld
 				.findOne(new BasicDBObject().append("name", nameTarget).append("is_target", true));
 		BasicDBObject entityTarget = (BasicDBObject) externalTarget.get("values");
@@ -60,7 +47,7 @@ public class Correlation {
 
 		BasicDBObject entity = ld.findOne(collection, query, fields);
 
-		// Pegar as metrics calculadas
+		// Pega as metrics calculadas
 		BasicDBList entitiesAnalysis = new BasicDBList();
 
 		if (entity != null)
@@ -82,7 +69,7 @@ public class Correlation {
 				entitiesAnalysis.add(search);
 		}
 
-		// Pegar a medida externa para correlação
+		// Pegar a medida externa
 		BasicDBObject externalIndicator = ld
 				.findOne(collectionExternalFile, new BasicDBObject().append("name", nameExternalIndicator).append("is_indicator", true));
 		BasicDBList ltValues = (BasicDBList) externalIndicator.get("values");
@@ -93,21 +80,20 @@ public class Correlation {
 					((BasicDBObject) ltValues.get(i)).getDouble("value"));
 		}
 		
-		//Verifica o coeficiente de Correlação individual.
 		for(int i = 0; i < entitiesAnalysis.size(); i++){
-			double coef = this.calculeCorrelation((BasicDBObject) entitiesAnalysis.get(i), htExternal);
+			double accuracy = this.calculateAccuracy((BasicDBObject) entitiesAnalysis.get(i), htExternal);
 			
 			System.out.println("Entity: " + ((BasicDBObject) entitiesAnalysis.get(i)).getString("entity")
-					+ " Pearson'R: " + coef);
+					+ " Accuracy Prediction: " + accuracy);
 		}
 
-		// Jogar tudo no algoritmo genético
-		CalculateWeight.correlation = true;
+		// Joga tudo no algoritmo genético
+		CalculateWeight.correlation = false;
 		CalculateWeight cw = new CalculateWeight(generations, criteria);
 		cw.calculateWeigth(entitiesAnalysis, htExternal);
 	}
-
-	public double calculeCorrelation(BasicDBObject entity, Hashtable<Date, Double> dataExt){
+	
+	public double calculateAccuracy(BasicDBObject entity, Hashtable<Date, Double> dataExt) throws Exception{
 		Date maxDate;
 		Date minDate = maxDate = dataExt.keys().nextElement();
 
@@ -146,44 +132,12 @@ public class Correlation {
 			d = Dates.getZeroTimeDate(c.getTime());
 		}
 		
-		return this.generationCorrelation(entityMetric, indicatorExternal);
+		return this.calculateAccuracy(entityMetric, indicatorExternal);
 	}
 	
-	public double generationCorrelation(double[] datas, double[] indicatorExternal) {
-		PearsonsCorrelation pearsonsCorrelation = new PearsonsCorrelation();
-
-		return Math.abs(pearsonsCorrelation.correlation(datas, indicatorExternal));
+	private double calculateAccuracy(double[] data, double[] indicatorExternal) throws Exception{
+		AdapterWeka aw = new AdapterWeka();
+		Instances insts = aw.createInstances(data, indicatorExternal);
+		return aw.evaluation(aw.createClassifier(insts), insts);
 	}
-	
-	public double generationCorrelation(double[] datas) {
-		PearsonsCorrelation pearsonsCorrelation = new PearsonsCorrelation();
-
-		return Math.abs(pearsonsCorrelation.correlation(datas, Engine.indicatorExternal));
-	}
-	
-	public double generationCorrelation(Set<String> names, Hashtable<String, double[]> datas) {
-		List<String> namesSorted = names.stream().collect(Collectors.toList());
-		Collections.sort(namesSorted, (o1, o2) -> o1.compareTo(o2));
-
-		Load load = new Load();
-		PearsonsCorrelation pearsonsCorrelation = new PearsonsCorrelation();
-
-		for (String name : namesSorted) {
-			double[] data = datas.get(name);
-			double[] inExt = new double[data.length];
-
-			List<ExternalData> listExtData = load
-					.getExternalData(Properties.getProperty("fileExternalData") + File.separator + name + ".csv");
-
-			for (int i = 0; i < listExtData.size(); i++) {
-				inExt[i] = listExtData.get(i).getValue();
-			}
-
-			return Math.abs(pearsonsCorrelation.correlation(data, inExt));
-
-		}
-
-		return 0;
-	}
-
 }

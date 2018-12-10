@@ -1,8 +1,10 @@
 package core.prediction;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import core.entity.ExternalData;
@@ -10,6 +12,12 @@ import io.file.Load;
 import io.file.Save;
 import util.commom.Files;
 import util.commom.Properties;
+import weka.classifiers.Classifier;
+import weka.classifiers.evaluation.Evaluation;
+import weka.classifiers.rules.OneR;
+import weka.core.Attribute;
+import weka.core.DenseInstance;
+import weka.core.Instances;
 
 public class AdapterWeka {
 
@@ -205,5 +213,55 @@ public class AdapterWeka {
 		}
 		
 		return data.toString();
+	}
+	
+	public Instances createInstances(double[] data, double[] indicator){
+		List<String> classes = new ArrayList<String>();
+		classes.add("UP");
+		classes.add("DOWN");
+		classes.add("KEEPS");
+		
+		ArrayList<Attribute> attrs = new ArrayList<>();
+		attrs.add(new Attribute("initial_value"));
+		attrs.add(new Attribute("final_value"));
+		attrs.add(new Attribute("variation", classes));
+		
+		Instances instances = new Instances("Relation", attrs, 0);
+		instances.setClassIndex(instances.numAttributes() - 1);
+		
+		
+		double[] instanceValue = new double[instances.numAttributes()];
+
+		for(int i = 0; i < data.length - 1; i++){
+			double diff = indicator[i + 1] - indicator[i];
+			instanceValue[0] = data[i];
+        	instanceValue[1] = data[i + 1];
+        	instanceValue[2] = diff > 0 ? 0 : (diff < 0 ? 1 : 2);
+        
+			instances.add(new DenseInstance(1, instanceValue));
+		}
+		
+		
+		System.out.println("After adding a instance");
+        System.out.println("--------------------------");
+        System.out.println(instances);
+        System.out.println("--------------------------");
+		
+		return instances;
+	}
+	
+	public double evaluation(Classifier classifier, Instances data) throws Exception {
+
+		Evaluation eval = new Evaluation(data);
+		eval.crossValidateModel(classifier, data, 10, new Random(1));
+
+		return 1 - eval.errorRate();
+	}
+	
+	public Classifier createClassifier(Instances data) throws Exception {
+		Classifier classifier = new OneR();
+		classifier.buildClassifier(data);
+
+		return classifier;
 	}
 }

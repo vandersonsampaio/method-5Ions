@@ -14,11 +14,12 @@ import core.correlation.Correlation;
 import core.correlation.SerialTime;
 import core.entity.EntitySentiment;
 import core.entity.SumarySentiment;
-import core.prediction.AdapterWeka;
+import core.prediction.Prediction;
 import core.semantic.annotation.googlecloud.EntityAnnotation;
 import core.semantic.annotation.googlecloud.SentimentEntityAnnotation;
 import core.semantic.sentimentanalysis.googlecloud.SentimentAnalysis;
 import core.summarization.SumyPython;
+import io.db.DataClean;
 import io.file.Load;
 import io.file.Save;
 import util.commom.Dates;
@@ -40,12 +41,13 @@ public class FiveIons {
 	private static CalculateMeasure calculateMeasure = new CalculateMeasure(HOST, DATABASENAME, "mentions");
 	private static Correlation correlation = new Correlation(HOST, DATABASENAME, "mentions", "externalfile");
 	private static SumyPython sumy = new SumyPython();
-	private static AdapterWeka prediction = new AdapterWeka();
+	private static Prediction prediction = new Prediction(HOST, DATABASENAME, "mentions", "externalfile");
+	private static DataClean dataClean = new DataClean(HOST, DATABASENAME, "mentions", "externalfile");
 
 	public static void main(String[] args) throws InterruptedException {
 
 		try {
-			int r = 2;
+			int r = 3;
 			if(1 + 1 == r) {
 			System.out.println("Entity Annotation");
 			entityAnnotation.analyzeEntitiesText();
@@ -54,8 +56,10 @@ public class FiveIons {
 			sentimentAnalysis.analyzeSentimentText();
 
 			System.exit(0);
-			//Juntar as entidades por URL Source
 			
+			System.out.println("Clear Datas - Linked Data");
+			dataClean.joinDocuments("real");
+
 			System.out.println("Entity Sentiment Analysis");
 			sentimentEntityAnnotation.entitySentimentText();
 			
@@ -69,13 +73,11 @@ public class FiveIons {
 			System.out.println("Correlation Metric");
 			correlation.calculeCorrelation("real", "real", 200, .52);
 
-			//Falta a predição
+			System.out.println("Perdiction");
+			prediction.calculePrediction("real", "real", 200, .5);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// Gera arquivo ARFF do Weka para correlação
-		//if (prediction)
-		//	prediction();
 	}
 
 	public static void compositeMetric() {
@@ -140,7 +142,7 @@ public class FiveIons {
 	public static void prediction() throws InterruptedException {
 		System.out.println("Start Prediction");
 
-		prediction.gennerationARFF();
+		//prediction.gennerationARFF();
 
 		System.out.println("End Prediction");
 	}

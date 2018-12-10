@@ -1,12 +1,10 @@
 package util.adjustWeight.AG;
 
-import java.io.File;
-import java.util.Hashtable;
 
 import core.correlation.CalculateWeight;
 import core.correlation.Correlation;
 import core.prediction.AdapterWeka;
-import util.commom.Properties;
+import weka.core.Instances;
 
 public class Weights {
 
@@ -37,16 +35,14 @@ public class Weights {
 		
 		if(!CalculateWeight.correlation){
 			//Acurácia
-			//AdapterWeka adWeka = new AdapterWeka();
-			//String fileName = adWeka.gennerationTempARFF(CalculateWeight.names, values);
-		
-			//this.criteria = adWeka.calculeAccuracy(fileName);
-		
-			//File file = new File(Properties.getProperty("pathFolderWeka") + File.separator + fileName + ".arff");
-		
-			//if(file.isFile()){
-			//	file.delete();
-			//}
+			AdapterWeka aw = new AdapterWeka();
+			Instances inst = aw.createInstances(value, Engine.indicatorExternal);
+			try {
+				this.criteria = aw.evaluation(aw.createClassifier(inst), inst);
+			} catch (Exception e) {
+				e.printStackTrace();
+				this.criteria = 0;
+			}
 		}else{
 		
 			//Correlação de Pearson

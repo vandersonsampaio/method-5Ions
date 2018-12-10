@@ -28,8 +28,8 @@ public class DataClean {
 		this.collectionExternalFile = collectionExternalFile;
 	}
 
-	// Pegar o nome, o tipo e o url_source
 	public void joinDocuments(String nameTarget) throws Exception {
+		//AJUSTAR EM DOCUMENTS O NOME DA ENTITY E O TIPO PARA CONSEGUIR IDENTIFICAR NO MOMENTO DO CALCULO DO SENTIMENTO
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionExternalFile);
 		SaveDocuments sd = new SaveDocuments(host, databaseName, collection);
 
