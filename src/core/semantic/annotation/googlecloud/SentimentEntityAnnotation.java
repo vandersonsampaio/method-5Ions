@@ -378,9 +378,6 @@ public class SentimentEntityAnnotation implements Runnable {
 																.append("score_coref_neg", (score_coref_sentiment_neg
 																		/ mag_coref_sentiment_neg)));
 
-								// Atualizar o documents do mentionsCollection
-								// adicionando o atributo sentiment
-								// com dois atributos (score_direct e score_coref)
 								sd.updateDocument(
 										new BasicDBObject().append("$set",
 												new BasicDBObject().append("documents", documents)),

@@ -152,12 +152,14 @@ public class SentimentAnalysis implements Runnable {
 	
 	@Override
 	public void run() {
+		Object id = null;
 		try {
 			SaveDocuments sd = new SaveDocuments(host, databaseName, collectionName);
 
 			for (int i = 0; i < arr.size(); i++) {
 				BasicDBObject json = (BasicDBObject) arr.get(i);
 				
+				id = json.get("_id");
 				JSONObject sentiment = this.analyzeSentimentText(json.get("text").toString(),
 						json.get("title").toString(), json.get("date").toString());
 				
@@ -171,9 +173,6 @@ public class SentimentAnalysis implements Runnable {
 							.append("offset", ((JSONObject)sentences.get(j)).get("offset")));
 				}
 				
-				//Sentimento geral do documento
-				//Magnitude do documento
-				//Sentimento de cada uma das sentenças
 				sd.updateDocument(new BasicDBObject().append("$set", new BasicDBObject().append("is_sentiment", "true")
 						.append("score_sentiment", sentiment.get("score"))
 						.append("magnitude_sentiment", sentiment.get("magnitude"))
@@ -181,6 +180,7 @@ public class SentimentAnalysis implements Runnable {
 						new BasicDBObject().append("_id", json.get("_id")));
 			}
 		} catch (Exception e) {
+			System.out.println(id);
 			e.printStackTrace();
 		}
 	}

@@ -626,7 +626,7 @@ public class SerialTime implements Runnable {
 				Date dateMin = null;
 				Date dateMax = null;
 				for (int j = 0; j < ltDocuments.size(); j++) {
-					Date date = formatter.parse(((BasicDBObject) ltDocuments.get(j)).getString("date"));
+					Date date = Dates.getZeroTimeDate(formatter.parse(((BasicDBObject) ltDocuments.get(j)).getString("date")));
 
 					if (!((BasicDBObject) ltDocuments.get(j)).containsKey("sentiments"))
 						continue;
@@ -706,7 +706,7 @@ public class SerialTime implements Runnable {
 							.append("score_coref_pos", score_coref_pos).append("score_coref_neg", score_coref_neg)));
 
 					c.add(Calendar.DATE, 1);
-					date = c.getTime();
+					date = Dates.getZeroTimeDate(c.getTime());
 				}
 
 				// salva com as datas ordenadas

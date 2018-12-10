@@ -29,7 +29,6 @@ public class DataClean {
 	}
 
 	public void joinDocuments(String nameTarget) throws Exception {
-		//AJUSTAR EM DOCUMENTS O NOME DA ENTITY E O TIPO PARA CONSEGUIR IDENTIFICAR NO MOMENTO DO CALCULO DO SENTIMENTO
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionExternalFile);
 		SaveDocuments sd = new SaveDocuments(host, databaseName, collection);
 
@@ -102,6 +101,33 @@ public class DataClean {
 					if(!exists) {
 						documentsBase.add(documents.get(k));
 					}
+					
+					//TESTAR
+					//Altera o apontamento do documento para a entidade. Verificando se já existe apontamento.
+					BasicDBObject docAlter = ld.findOne(new BasicDBObject().append("_id", ((BasicDBObject) documents.get(k)).get("id_document")));
+					BasicDBList listAlter = (BasicDBList) docAlter.get("entities");
+					boolean existsAlter = true;
+					int indexRemove = -1;
+					for(int van = 0; van < listAlter.size(); van++){
+						BasicDBObject m = (BasicDBObject) listAlter.get(van);
+						if(m.getString("entity").equals(((BasicDBObject)jarr.get(j)).getString("entity") ) && m.getString("entity").equals(((BasicDBObject)jarr.get(j)).getString("type") ))
+							indexRemove = van;
+						
+						if(m.getString("entity").equals(((BasicDBObject)jarr.get(indexBase)).getString("entity") ) && m.getString("entity").equals(((BasicDBObject)jarr.get(indexBase)).getString("type") ))
+							existsAlter = false;
+					}
+					
+					if(indexRemove != -1)
+						listAlter.remove(indexRemove);
+					
+					if(existsAlter)
+						listAlter.add(new BasicDBObject().append("entity", ((BasicDBObject)jarr.get(indexBase)).getString("entity"))
+								.append("type", ((BasicDBObject)jarr.get(indexBase)).getString("type")));
+					
+					if(indexRemove != -1 || existsAlter)
+						sd.updateDocument(
+								new BasicDBObject().append("$set", new BasicDBObject().append("entities", listAlter)), 
+								new BasicDBObject().append("_id", docAlter.get("_id")));
 				}
 				
 				//excluo a mentions

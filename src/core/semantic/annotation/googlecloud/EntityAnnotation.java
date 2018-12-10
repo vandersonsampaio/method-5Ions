@@ -175,6 +175,7 @@ public class EntityAnnotation implements Runnable {
 	@Override
 	public void run() {
 
+		Object id = null;
 		try {
 			SaveDocuments sd = new SaveDocuments(host, databaseName, collectionNameSave);
 			LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameSave);
@@ -183,6 +184,7 @@ public class EntityAnnotation implements Runnable {
 
 				BasicDBObject bdbo = (BasicDBObject) arr.get(i);
 
+				id = bdbo.get("_id");
 				JSONObject entities = this.analyzeEntitiesText(bdbo.getString("text"), bdbo.get("title").toString(),
 						bdbo.getString("date"));
 
@@ -325,16 +327,10 @@ public class EntityAnnotation implements Runnable {
 								new BasicDBObject().append("is_entityannotation", "true").append("entities",
 										ltEntities)),
 						new BasicDBObject().append("_id", bdbo.get("_id")));
-
-				/*
-				 * sd.updateDocument(collectionNameFind, new BasicDBObject().append("$set", new
-				 * BasicDBObject().append("entities", ltEntities)), new
-				 * BasicDBObject().append("_id", ((JSONObject) arr.get(i)).get("_id")));
-				 */
 			}
 
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
+			System.out.println(id);
 			e.printStackTrace();
 		}
 

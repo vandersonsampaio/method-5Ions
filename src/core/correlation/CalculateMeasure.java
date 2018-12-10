@@ -13,6 +13,7 @@ import com.mongodb.BasicDBObject;
 
 import io.db.LoadDocuments;
 import io.db.SaveDocuments;
+import util.commom.Dates;
 
 public class CalculateMeasure implements Runnable {
 
@@ -108,9 +109,7 @@ public class CalculateMeasure implements Runnable {
 		BasicDBList ltCalculeShort = new BasicDBList();
 		BasicDBList stShort = ((BasicDBList) entity.get("serial_time_short"));
 		for (int du = 0; du < stShort.size(); du++) {
-			// sumarize_metric: {metric: , name: '', description: '', [{date: '',
-			// value_direct: '', value_coref: '', value_total: ''}]}
-
+			
 			Double value_direct = null;
 			Double value_coref = null;
 			Double value_total = null;
@@ -126,7 +125,7 @@ public class CalculateMeasure implements Runnable {
 						sentiment.getDouble("score_direct_neg") + sentiment.getDouble("score_coref_neg"));
 			}
 
-			ltCalculeShort.add(new BasicDBObject().append("date", ((BasicDBObject) stShort.get(du)).getDate("date"))
+			ltCalculeShort.add(new BasicDBObject().append("date", Dates.getZeroTimeDate(((BasicDBObject) stShort.get(du)).getDate("date")))
 					.append("value_direct", value_direct).append("value_coref", value_coref)
 					.append("value_total", value_total));
 		}
@@ -150,7 +149,7 @@ public class CalculateMeasure implements Runnable {
 						sentiment.getDouble("score_direct_neg") + sentiment.getDouble("score_coref_neg"));
 			}
 
-			ltCalculeAcum.add(new BasicDBObject().append("date", ((BasicDBObject) stAcum.get(du)).getDate("date"))
+			ltCalculeAcum.add(new BasicDBObject().append("date", Dates.getZeroTimeDate(((BasicDBObject) stAcum.get(du)).getDate("date")))
 					.append("value_direct", value_direct).append("value_coref", value_coref)
 					.append("value_total", value_total));
 		}
@@ -168,11 +167,6 @@ public class CalculateMeasure implements Runnable {
 			for (int i = 0; i < arr.size(); i++) {
 
 				splitDay((BasicDBObject) arr.get(i));
-				// splitMonth((BasicDBObject) jarrEntities.get(i));
-				// splitWeek((BasicDBObject) jarrEntities.get(i));
-				// Consulta a collection PERIOD no banco de dados e realiza calculo
-				// de metrica para todos
-				// splitCustom((BasicDBObject) jarrEntities.get(i));
 			}
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException | NoSuchMethodException | SecurityException | UnknownHostException e) {
