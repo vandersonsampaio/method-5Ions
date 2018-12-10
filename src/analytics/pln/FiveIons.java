@@ -1,8 +1,6 @@
 package analytics.pln;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -10,9 +8,9 @@ import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 
 import core.correlation.CalculateMeasure;
+import core.correlation.Correlation;
 import core.correlation.SerialTime;
 import core.entity.EntitySentiment;
 import core.entity.SumarySentiment;
@@ -40,75 +38,44 @@ public class FiveIons {
 	private static Load load = new Load();
 	private static SerialTime serialTime = new SerialTime(HOST, DATABASENAME, "mentions");
 	private static CalculateMeasure calculateMeasure = new CalculateMeasure(HOST, DATABASENAME, "mentions");
+	private static Correlation correlation = new Correlation(HOST, DATABASENAME, "mentions", "externalfile");
 	private static SumyPython sumy = new SumyPython();
 	private static AdapterWeka prediction = new AdapterWeka();
 
 	public static void main(String[] args) throws InterruptedException {
 
-		boolean correlation = false;
-		boolean prediction = false;
-
-		for (int i = 0; i < args.length; i++) {
-
-			if (args[i].equals("corr"))
-				correlation = true;
-
-			if (args[i].equals("pred"))
-				prediction = true;
-		}
-
 		try {
-			// Anota as entidades
+			int r = 2;
+			if(1 + 1 == r) {
 			System.out.println("Entity Annotation");
 			entityAnnotation.analyzeEntitiesText();
 
-			// Anota os sentimentos
 			System.out.println("Sentiment Analysis");
 			sentimentAnalysis.analyzeSentimentText();
 
-			// Anota os sentimentos das entidades
+			System.exit(0);
+			//Juntar as entidades por URL Source
+			
 			System.out.println("Entity Sentiment Analysis");
 			sentimentEntityAnnotation.entitySentimentText();
 			
-			// processo deverá ser integrado a análise de sentimentos
-			// Carrega o sentimento das entidades para gerar as 7-uplas
-			// if (genneration7uplas)
-			// generation7uplas("25/12/2016", "25/09/2017");
-
-			// Carrega as 5-uplas para sumarizar as medidas de acordo com a
-			// granularidade
-			// desejada (Diário, Semanal, Mensal, Customizada)
-			// Short-Time e Acumulative (Falta o acumulative)
-			// Não será mais passado parâmetros nesse método, o processo será em
-			// todo o tempo das publicações para todas as métricas implementadas
-			// if (calculationMetrics)
-			// summarizationMetric("25/12/2016", "25/09/2017");
-			// serialTime.summarizationMetric();
 			System.out.println("SerialTime");
 			serialTime.generationSerialTime();
 		
 			System.out.println("Calculate Metric");
 			calculateMeasure.summarizationMetric();
+			}
+			
+			System.out.println("Correlation Metric");
+			correlation.calculeCorrelation("real", "real", 200, .52);
 
-		} catch (UnknownHostException | ParseException | java.text.ParseException | ClassNotFoundException
-				| InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-				| NoSuchMethodException | SecurityException e) {
+			//Falta a predição
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// Correlação das duas séries temporais
-		// Série externa deverá ser informada aqui
-		//
-		if (correlation)
-			correlationSeries();
-
-		// Adicionar contribuição
-		// rever isso tudo. Ajuste de pesos será interno a saída.
-		//if (false)
-		//	compositeMetric();
-
 		// Gera arquivo ARFF do Weka para correlação
-		if (prediction)
-			prediction();
+		//if (prediction)
+		//	prediction();
 	}
 
 	public static void compositeMetric() {

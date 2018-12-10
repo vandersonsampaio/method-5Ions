@@ -2,6 +2,7 @@ package io.db;
 
 import java.net.UnknownHostException;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 
@@ -64,5 +65,10 @@ public class SaveDocuments {
 	
 	public void updateDocument(DBObject alter, DBObject searchQuery) {
 		this.mongo.updateDocument(alter, searchQuery);
+	}
+
+	public void removeDocument(DBObject query) {
+		this.mongo.removeDocument(query);
+		
 	}
 }

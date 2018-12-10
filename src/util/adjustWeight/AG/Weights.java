@@ -25,38 +25,33 @@ public class Weights {
 	public void setWeights(Weight[] weights){
 		this.weights = weights;
 		
-		Hashtable<String, double[]> values = new Hashtable<>(); 
+		double[] value = new double[Engine.constants.length];
 		
-		for(String name : CalculateWeight.names){
-			double[][] constant = CalculateWeight.constants.get(name);
-			double[] value = new double[constant.length];
-			
-			for(int i = 0; i < constant.length; i++){
-				value[i] = weights[0].getValue() * constant[i][0] + weights[1].getValue() * constant[i][1] + weights[2].getValue() * constant[i][2];
-			}
-			
-			values.put(name, value);
+		for(int i = 0; i < value.length; i++)
+			value[i] = 0;
+		
+		for(int i = 0; i < Engine.constants.length; i++){
+			for(int j = 0; j < Engine.constants[0].length; j++)
+				value[i] += weights[j].getValue() * Engine.constants[i][j];
 		}
 		
-		boolean accuracy = false;
-		
-		if(accuracy){
+		if(!CalculateWeight.correlation){
 			//Acurácia
-			AdapterWeka adWeka = new AdapterWeka();
-			String fileName = adWeka.gennerationTempARFF(CalculateWeight.names, values);
+			//AdapterWeka adWeka = new AdapterWeka();
+			//String fileName = adWeka.gennerationTempARFF(CalculateWeight.names, values);
 		
-			this.criteria = adWeka.calculeAccuracy(fileName);
+			//this.criteria = adWeka.calculeAccuracy(fileName);
 		
-			File file = new File(Properties.getProperty("pathFolderWeka") + File.separator + fileName + ".arff");
+			//File file = new File(Properties.getProperty("pathFolderWeka") + File.separator + fileName + ".arff");
 		
-			if(file.isFile()){
-				file.delete();
-			}
+			//if(file.isFile()){
+			//	file.delete();
+			//}
 		}else{
 		
 			//Correlação de Pearson
 			Correlation cor = new Correlation();
-			this.criteria = cor.generationCorrelation(CalculateWeight.names, values);
+			this.criteria = cor.generationCorrelation(value);
 			//this.criteria = cor.numberValid();
 		}
 	}
@@ -149,5 +144,10 @@ class Weight {
 		cromossomo[6] = Integer.parseInt(sPartDecimal.charAt(5) + "");
 		cromossomo[7] = Integer.parseInt(sPartDecimal.charAt(6) + "");
 		cromossomo[8] = value > 0 ? 1 : -1;
+	}
+	
+	@Override
+	public String toString(){
+		return value + "";
 	}
 }

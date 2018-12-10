@@ -114,7 +114,7 @@ public class SentimentAnalysis implements Runnable {
 	public boolean analyzeSentimentText() throws UnknownHostException, InterruptedException{
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionName);
 
-		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_sentiment", "false"),  1);
+		JSONArray jarr = ld.findByQuery(new BasicDBObject().append("is_sentiment", "false"),  3200);
 
 		int length = jarr.size() / NUMBERTHREAD;
 

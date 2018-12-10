@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.json.simple.JSONArray;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 
@@ -47,6 +48,12 @@ public class LoadDocuments {
 		
 		return ret;
 	}
+	
+	public JSONArray findByQuery(String collection, DBObject query) {
+		this.mongo.setCollection(collection);
+		
+		return this.findByQuery(query);
+	}
 
 	@SuppressWarnings("unchecked")
 	public JSONArray findByQuery(DBObject query) {
@@ -72,5 +79,25 @@ public class LoadDocuments {
 		}
 		
 		return ret;
+	}
+
+	public BasicDBObject findOne(DBObject query) {
+		return mongo.findOne(query);
+	}
+	
+	public BasicDBObject findOne(DBObject query, DBObject fields) {
+		return mongo.findOne(query, fields);
+	}
+	
+	public BasicDBObject findOne(String collection, DBObject query) {
+		this.mongo.setCollection(collection);
+		
+		return this.findOne(query);
+	}
+	
+	public BasicDBObject findOne(String collection, DBObject query, DBObject fields) {
+		this.mongo.setCollection(collection);
+		
+		return this.findOne(query, fields);
 	}
 }

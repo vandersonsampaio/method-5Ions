@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class Crossover {
 	public static Weights crossover(Parents pais) {
-		Weights filho = new Weights();
+		Weights son = new Weights(pais.pai1.getWeights().length);
 		Weight[] weight = new Weight[pais.pai1.getWeights().length];
 		
 		int[] cromossomo = new int[9];
@@ -30,9 +30,9 @@ public class Crossover {
 			weight[j] = new Weight(cromossomo);
 		}
 		
-		filho.setWeights(weight);
+		son.setWeights(weight);
 
-		return filho;
+		return son;
 	}
 }
 

@@ -90,4 +90,17 @@ public class MongoDB {
 	public void updateDocument(DBObject alter, DBObject search){
 		collection.update(search, alter);
 	}
+
+	public BasicDBObject findOne(DBObject query) {
+		return (BasicDBObject) collection.findOne(query);
+	}
+	
+	public BasicDBObject findOne(DBObject query, DBObject fields) {
+		return (BasicDBObject) collection.findOne(query, fields);
+	}
+
+	public void removeDocument(DBObject query) {
+		collection.remove(query);
+		
+	}
 }

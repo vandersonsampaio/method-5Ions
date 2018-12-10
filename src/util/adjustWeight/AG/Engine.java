@@ -3,16 +3,20 @@ package util.adjustWeight.AG;
 import java.util.Random;
 
 public class Engine {
-	public double criteria = 6;
+	public static double[][] constants;
+	public static double[] indicatorExternal;
+	private double criteria;
+	private int numberWeights;
 	
-	public Engine(double criteria){
+	public Engine(double criteria, int numberWeights){
 		this.criteria = criteria;
+		this.numberWeights = numberWeights;
 	}
 	
 	public Weights randomWeight() {
-		Weights ret = new Weights();
+		Weights ret = new Weights(numberWeights);
 		
-		Weight[] wei = new Weight[3];
+		Weight[] wei = new Weight[numberWeights];
 		Random rand = new Random();
 		for (int i = 0; i < wei.length; i++) {
 			double d = rand.nextFloat();

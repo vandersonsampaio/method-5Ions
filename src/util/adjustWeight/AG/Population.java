@@ -1,5 +1,6 @@
 package util.adjustWeight.AG;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -105,13 +106,13 @@ public class Population {
 		return wei;
 	}
     
-    public double[] printBestWeights(int geracao) {
-    	double[] ret = new double[3];
+    public double[] printBestWeights(int generation, int numberWeights) {
+    	double[] ret = new double[numberWeights];
     	double maxCriteria = 0;
 		for (int i = 0; i < length; i++) {
 			if (population.get(i).getCriteria() >= engine.getCriteria()) {
-				System.out.println("Solução nº " + i + " da geração " + geracao);
-				System.out.println("Pesos: " + population.get(i).getWeights().toString());				
+				System.out.println("Solução nº " + i + " da geração " + generation);
+				System.out.println("Pesos: " + Arrays.toString(population.get(i).getWeights()));				
 			}
 			
 			if(population.get(i).getCriteria() > maxCriteria){
@@ -122,7 +123,7 @@ public class Population {
 			}
 		}
 		
-		System.out.println("Selecionado: {" + ret[0] + "; " + ret[1] + "; " + ret[2] + "} Critério:" + maxCriteria);
+		System.out.println("Selected: {" + ret[0] + "; " + ret[1] + "; " + ret[2] + "} Critério:" + maxCriteria);
 		
 		return ret;
 	}

@@ -50,7 +50,7 @@ public class CalculateMeasure implements Runnable {
 		obj.add(new BasicDBObject("is_calculatemeasure", "false"));
 		query.put("$and", obj);
 
-		JSONArray jarrEntities = ld.findByQuery(query, 500);
+		JSONArray jarrEntities = ld.findByQuery(query, 5000);
 		
 		int length = jarrEntities.size() / NUMBERTHREAD;
 
