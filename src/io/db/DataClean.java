@@ -1,7 +1,5 @@
 package io.db;
 
-import java.net.UnknownHostException;
-
 import org.json.simple.JSONArray;
 
 import com.mongodb.BasicDBList;
@@ -72,9 +70,32 @@ public class DataClean {
 					boolean exists = false;
 					for(int du = 0; du < documentsBase.size(); du++)
 						if(((BasicDBObject) documents.get(k)).get("id_document").equals(((BasicDBObject) documentsBase.get(du)).get("id_document"))) {
-							throw new Exception("Existe Documento. Código a Implementar.");
 							//o documento exite no documentBase tenho que verificar as menções
-							//exists = true;
+							BasicDBList mentionsBase = (BasicDBList) ((BasicDBObject) documentsBase.get(du)).get("mentions");
+							BasicDBList mentions = (BasicDBList) ((BasicDBObject) documents.get(k)).get("mentions");
+							for(int ca = 0; ca < mentions.size(); ca++) {
+								boolean existsMention = false;
+								for(int van = 0; van < mentionsBase.size(); van++) {
+									if(((BasicDBObject) mentions.get(ca)).getInt("offset") == ((BasicDBObject) mentionsBase.get(van)).getInt("offset")) {
+										existsMention = true;
+									}
+								}
+								
+								if(!existsMention) {
+									//atualizar a contagem
+									if(((BasicDBObject) mentions.get(ca)).getString("type").equals("PROPER"))
+										((BasicDBObject) documentsBase.get(du)).replace("number_direct_mentions", 
+												((BasicDBObject) documentsBase.get(du)).getInt("number_direct_mentions") + 1);
+									else 
+										((BasicDBObject) documentsBase.get(du)).replace("number_coref_mentions", 
+												((BasicDBObject) documentsBase.get(du)).getInt("number_coref_mentions") + 1);
+									
+									((BasicDBList) ((BasicDBObject) documentsBase.get(du)).get("mentions")).add((BasicDBObject) mentions.get(ca));
+								}
+							}
+							
+							exists = true;
+							break;
 						}
 					
 					//O documento não existe em documentsBase
