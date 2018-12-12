@@ -42,6 +42,10 @@ public class DataClean {
 		// Obter as menções por url_source
 		for (int i = 0; i < entitiesRelation.size(); i++) {
 			BasicDBObject current = ((BasicDBObject) entitiesRelation.get(i));
+			
+			if(current.get("url_source") == null)
+				continue;
+			
 			JSONArray jarr = ld.findByQuery(collection, new BasicDBObject().append("url_source",
 					current.getString("url_source")));
 
@@ -104,16 +108,16 @@ public class DataClean {
 					
 					//TESTAR
 					//Altera o apontamento do documento para a entidade. Verificando se já existe apontamento.
-					BasicDBObject docAlter = ld.findOne(new BasicDBObject().append("_id", ((BasicDBObject) documents.get(k)).get("id_document")));
+					BasicDBObject docAlter = ld.findOne("documents", new BasicDBObject().append("_id", ((BasicDBObject) documents.get(k)).get("id_document")));
 					BasicDBList listAlter = (BasicDBList) docAlter.get("entities");
 					boolean existsAlter = true;
 					int indexRemove = -1;
 					for(int van = 0; van < listAlter.size(); van++){
 						BasicDBObject m = (BasicDBObject) listAlter.get(van);
-						if(m.getString("entity").equals(((BasicDBObject)jarr.get(j)).getString("entity") ) && m.getString("entity").equals(((BasicDBObject)jarr.get(j)).getString("type") ))
+						if(m.getString("entity").equals(((BasicDBObject)jarr.get(j)).getString("entity") ) && m.getString("type").equals(((BasicDBObject)jarr.get(j)).getString("type") ))
 							indexRemove = van;
 						
-						if(m.getString("entity").equals(((BasicDBObject)jarr.get(indexBase)).getString("entity") ) && m.getString("entity").equals(((BasicDBObject)jarr.get(indexBase)).getString("type") ))
+						if(m.getString("entity").equals(((BasicDBObject)jarr.get(indexBase)).getString("entity") ) && m.getString("type").equals(((BasicDBObject)jarr.get(indexBase)).getString("type") ))
 							existsAlter = false;
 					}
 					
@@ -125,18 +129,19 @@ public class DataClean {
 								.append("type", ((BasicDBObject)jarr.get(indexBase)).getString("type")));
 					
 					if(indexRemove != -1 || existsAlter)
-						sd.updateDocument(
+						sd.updateDocument("documents",
 								new BasicDBObject().append("$set", new BasicDBObject().append("entities", listAlter)), 
 								new BasicDBObject().append("_id", docAlter.get("_id")));
 				}
 				
 				//excluo a mentions
-				sd.removeDocument(new BasicDBObject().append("_id", ((BasicDBObject)jarr.get(j)).get("_id")));
+				sd.removeDocument("mentions",
+						new BasicDBObject().append("_id", ((BasicDBObject)jarr.get(j)).get("_id")));
 			}
 			
 			if(indexBase != -1) {
 				//Salvo o novo documento
-				sd.updateDocument(
+				sd.updateDocument("mentions",
 						new BasicDBObject().append("$set", new BasicDBObject().append("documents", documentsBase)), 
 						new BasicDBObject().append("_id", ((BasicDBObject)jarr.get(indexBase)).get("_id")));
 			}

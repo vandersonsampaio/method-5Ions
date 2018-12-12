@@ -161,7 +161,7 @@ public class SentimentEntityAnnotation implements Runnable {
 		obj.add(new BasicDBObject("is_entityannotation", "true"));
 		query.put("$and", obj);
 
-		JSONArray jarr = ld.findByQuery(query, 3000);
+		JSONArray jarr = ld.findByQuery(query, 5000);
 
 		int length = jarr.size() / NUMBERTHREAD;
 

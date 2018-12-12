@@ -47,28 +47,29 @@ public class FiveIons {
 	public static void main(String[] args) throws InterruptedException {
 
 		try {
-			int r = 3;
-			if(1 + 1 == r) {
 			System.out.println("Entity Annotation");
 			entityAnnotation.analyzeEntitiesText();
 
 			System.out.println("Sentiment Analysis");
 			sentimentAnalysis.analyzeSentimentText();
 
-			System.exit(0);
-			
-			System.out.println("Clear Datas - Linked Data");
-			dataClean.joinDocuments("real");
-
+			boolean clear = false;
+			if(clear) {
+				System.out.println("Clear Datas - Linked Data");
+				dataClean.joinDocuments("real");
+			}
+						
 			System.out.println("Entity Sentiment Analysis");
 			sentimentEntityAnnotation.entitySentimentText();
+			
+			System.exit(0);
+			
 			
 			System.out.println("SerialTime");
 			serialTime.generationSerialTime();
 		
 			System.out.println("Calculate Metric");
 			calculateMeasure.summarizationMetric();
-			}
 			
 			System.out.println("Correlation Metric");
 			correlation.calculeCorrelation("real", "real", 200, .52);
