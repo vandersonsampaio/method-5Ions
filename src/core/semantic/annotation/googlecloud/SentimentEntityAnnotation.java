@@ -151,15 +151,30 @@ public class SentimentEntityAnnotation implements Runnable {
 	}
 
 	@SuppressWarnings("unchecked")
-	public boolean entitySentimentText() throws UnknownHostException, InterruptedException {
+	public boolean entitySentimentText(String nameTarget) throws UnknownHostException, InterruptedException {
 		LoadDocuments ld = new LoadDocuments(host, databaseName, collectionNameFind);
 
+		
+		BasicDBObject externalTarget = ld
+				.findOne(new BasicDBObject().append("name", nameTarget).append("is_target", true));
+		BasicDBObject entityTarget = (BasicDBObject) externalTarget.get("values");
+
+		BasicDBList entitiesRelation = (BasicDBList) entityTarget.get("relations");
+		entitiesRelation.add(entityTarget);
+		
+		List<BasicDBObject> objEnt = new ArrayList<BasicDBObject>();
+		
+		for(int i = 0; i < entitiesRelation.size(); i++){
+			objEnt.add(new BasicDBObject()
+					.append("entity", ((BasicDBObject) entitiesRelation.get(i)).getString("name"))
+					.append("type", ((BasicDBObject) entitiesRelation.get(i)).getString("type"))
+					.append("is_entitysentiment", "false")
+					.append("is_sentiment", "true")
+					.append("is_entityannotation", "true"));
+		}
+		
 		BasicDBObject query = new BasicDBObject();
-		List<BasicDBObject> obj = new ArrayList<BasicDBObject>();
-		obj.add(new BasicDBObject("is_entitysentiment", "false"));
-		obj.add(new BasicDBObject("is_sentiment", "true"));
-		obj.add(new BasicDBObject("is_entityannotation", "true"));
-		query.put("$and", obj);
+		query.put("$or", objEnt);
 
 		JSONArray jarr = ld.findByQuery(query, 5000);
 
